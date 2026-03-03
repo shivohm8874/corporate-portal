@@ -1,0 +1,14 @@
+﻿.page {
+  display: grid;
+  gap: 0;
+}
+
+.page .section-title {
+  margin-bottom: 4px;
+}
+
+.payment-card strong {
+  display: block;
+  margin: 12px 0 8px;
+  font-size: 2.2rem;
+}
