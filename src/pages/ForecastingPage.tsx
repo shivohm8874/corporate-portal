@@ -4,7 +4,7 @@ import { SectionTitle, StatCard } from '../components/ui';
 export function ForecastingPage() {
   return (
     <div className="page page-forecasting">
-      <SectionTitle title="Health Forecasting" subtitle="Predict workforce health trends and likely outcomes" />
+      <SectionTitle title="Health Forecast" subtitle="See upcoming health trends and expected impact" />
       <div className="grid cols-3">
         <StatCard title="Predicted Healthy Employees" subtitle="Upcoming period" value="2,534" delta="94.4% probability" />
         <StatCard title="At-Risk Cluster" subtitle="Needs intervention" value="151" delta="Mostly sleep and stress" />
@@ -22,3 +22,4 @@ export function ForecastingPage() {
     </div>
   );
 }
+

@@ -1,11 +1,11 @@
 ﻿import { BadgeIndianRupee, Sparkles, ChartNoAxesColumnIncreasing, WalletCards } from 'lucide-react';
-import { SavingsCompareChart } from '../components/charts';
+import { SavingsBreakdownPie, SavingsCompareChart } from '../components/charts';
 import { SectionTitle, StatCard } from '../components/ui';
 
 export function SavingsPage() {
   return (
     <div className="page page-savings">
-      <SectionTitle title="Savings & ROI Engine" subtitle="Clear proof of how employee wellness saves your company money" />
+      <SectionTitle title="Savings & ROI" subtitle="See how wellness programs reduce company costs" />
       <div className="grid cols-4">
         <StatCard title="This Month Saved" subtitle="vs traditional healthcare" value="₹63.2L" delta="Strong performance" icon={<Sparkles size={16} />} />
         <StatCard title="Projected Annual Savings" subtitle="Based on current trends" value="₹7.2Cr" delta="Growing +18% YoY" icon={<ChartNoAxesColumnIncreasing size={16} />} />
@@ -13,7 +13,9 @@ export function SavingsPage() {
         <StatCard title="Cost per Employee" subtitle="Total annualized" value="₹14,166" delta="Down by 12%" icon={<WalletCards size={16} />} />
       </div>
       <section className="card panel">
-        <h2>How We Save You Money</h2>
+        <h2>Where Savings Come From</h2>
+        <p className="muted">Breakdown of monthly savings by service type</p>
+        <SavingsBreakdownPie />
         {[
           ['Hospital Visits Avoided', '₹21.0L'],
           ['In-office Medicine Savings', '₹8.9L'],
@@ -29,3 +31,4 @@ export function SavingsPage() {
     </div>
   );
 }
+

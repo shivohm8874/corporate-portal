@@ -4,7 +4,7 @@ import { SectionTitle, StatCard } from '../components/ui';
 export function PayrollPage() {
   return (
     <div className="page page-payroll">
-      <SectionTitle title="Payroll & Integrations" subtitle="Manage payroll system connections and employee data sync" action={<button className="primary-btn">+ Add Integration</button>} />
+      <SectionTitle title="Payroll Integrations" subtitle="Connect payroll systems and monitor sync status" action={<button className="primary-btn">+ Add Integration</button>} />
       <div className="grid cols-4">
         <StatCard title="Connected Systems" subtitle="Current integrations" value="3" delta="1 requires reconnect" icon={<Workflow size={16} />} />
         <StatCard title="Total Synced Employees" subtitle="Across all systems" value="2,685" delta="last full sync 2 mins" icon={<UsersRound size={16} />} />
@@ -39,3 +39,4 @@ export function PayrollPage() {
     </div>
   );
 }
+

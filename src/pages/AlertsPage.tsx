@@ -3,7 +3,7 @@
 export function AlertsPage() {
   return (
     <div className="page page-alerts">
-      <SectionTitle title="Alerts" subtitle="Live operational and wellness risk alerts" />
+      <SectionTitle title="Alerts" subtitle="Important updates that need your attention" />
       <section className="card panel">
         {[
           ['Credit burn spike in South region', 'High', 'Daily burn rate +19% above baseline'],
@@ -20,3 +20,4 @@ export function AlertsPage() {
     </div>
   );
 }
+

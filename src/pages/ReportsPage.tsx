@@ -3,7 +3,7 @@
 export function ReportsPage() {
   return (
     <div className="page page-reports">
-      <SectionTitle title="Reports" subtitle="Executive and operational exports" />
+      <SectionTitle title="Reports" subtitle="Generate and download business reports" />
       <section className="card panel">
         <div className="grid cols-3">
           {[
@@ -25,3 +25,4 @@ export function ReportsPage() {
     </div>
   );
 }
+

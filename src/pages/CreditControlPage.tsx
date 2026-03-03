@@ -11,7 +11,7 @@ export function CreditControlPage() {
 
   return (
     <div className="page page-credit">
-      <SectionTitle title="Credit Control Room" subtitle="Manage credit balance and refill when needed" />
+      <SectionTitle title="Credit Management" subtitle="Track credit balance and refill when required" />
       <div className="grid cols-3">
         <StatCard title="Current Balance" subtitle="Employees using for services" value="₹37.1L" delta="Active" icon={<WalletCards size={16} />} />
         <StatCard title="Credits Will Last" subtitle="At this burn rate" value="29 days" delta="Healthy" icon={<Clock3 size={16} />} />
@@ -58,3 +58,4 @@ export function CreditControlPage() {
     </div>
   );
 }
+

@@ -5,7 +5,7 @@ import { SectionTitle, StatCard } from '../components/ui';
 export function HealthPage() {
   return (
     <div className="page page-health">
-      <SectionTitle title="Health Intelligence" subtitle="Analytics-driven health insights at company level" />
+      <SectionTitle title="Health Insights" subtitle="See company-wide health trends and engagement" />
       <div className="grid cols-3">
         <StatCard title="Mental Health Index" subtitle="Company aggregate" value="82" delta="+5 points from last month" icon={<Brain size={16} />} />
         <StatCard title="Physical Health Index" subtitle="Company aggregate" value="75" delta="+1 point from last month" icon={<Heart size={16} />} />
@@ -26,3 +26,4 @@ export function HealthPage() {
     </div>
   );
 }
+

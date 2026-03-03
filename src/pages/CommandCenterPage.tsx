@@ -3,16 +3,16 @@ import { LineTrendChart, RingScore } from '../components/charts';
 import { SectionTitle, StatCard } from '../components/ui';
 
 const metricCards = [
-  { title: 'Credit Coins Remaining', subtitle: 'Employees using for services', value: '37.1L', delta: '-128K today', icon: <WalletCards size={16} /> },
-  { title: 'Daily Burn Rate', subtitle: 'Active service usage', value: '128K', delta: '+8% vs last week', icon: <ChartNoAxesColumnIncreasing size={16} /> },
-  { title: 'Credits Last For', subtitle: 'At current usage rate', value: '29 days', delta: 'Runway healthy', icon: <Clock3 size={16} /> },
-  { title: 'Employee Engagement', subtitle: 'Actively using services', value: '92.3%', delta: '+2.1% this month', icon: <Users size={16} /> },
+  { title: 'Credit Coins Remaining', subtitle: 'Employees using for services', value: '37.1L', delta: '-128K today', icon: <WalletCards size={16} />, tone: 'brand' as const, deltaTone: 'negative' as const },
+  { title: 'Daily Burn Rate', subtitle: 'Active service usage', value: '128K', delta: '+8% vs last week', icon: <ChartNoAxesColumnIncreasing size={16} />, tone: 'warning' as const, deltaTone: 'positive' as const },
+  { title: 'Credits Last For', subtitle: 'At current usage rate', value: '29 days', delta: 'Runway healthy', icon: <Clock3 size={16} />, tone: 'info' as const, deltaTone: 'positive' as const },
+  { title: 'Employee Engagement', subtitle: 'Actively using services', value: '92.3%', delta: '+2.1% this month', icon: <Users size={16} />, tone: 'success' as const, deltaTone: 'positive' as const },
 ];
 
 export function CommandCenterPage() {
   return (
     <div className="page page-command">
-      <SectionTitle title="Command Center" subtitle="Your employee wellness program overview" action={<button className="primary-btn">Refill Credits</button>} />
+      <SectionTitle title="Dashboard" subtitle="See your key health and credit numbers in one place" action={<button className="primary-btn">Refill Credits</button>} />
       <div className="grid cols-4">{metricCards.map((card) => <StatCard key={card.title} {...card} />)}</div>
       <div className="grid cols-2-big">
         <section className="card panel">
@@ -68,3 +68,4 @@ export function CommandCenterPage() {
     </div>
   );
 }
+

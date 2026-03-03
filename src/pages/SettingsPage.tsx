@@ -3,7 +3,7 @@
 export function SettingsPage() {
   return (
     <div className="page page-settings">
-      <SectionTitle title="Settings" subtitle="Configure organization profile, integrations, and notifications" />
+      <SectionTitle title="Settings" subtitle="Manage company profile, integrations, and alerts" />
       <div className="grid cols-2">
         <section className="card panel">
           <h2>Organization</h2>
@@ -23,3 +23,4 @@ export function SettingsPage() {
     </div>
   );
 }
+

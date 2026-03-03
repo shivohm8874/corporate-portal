@@ -4,7 +4,7 @@ import { ProgressBar, SectionTitle, StatCard } from '../components/ui';
 export function WorkforcePage() {
   return (
     <div className="page page-workforce">
-      <SectionTitle title="Workforce Map" subtitle="Aggregated employee data and department insights" />
+      <SectionTitle title="Employee Overview" subtitle="Understand employee participation by team" />
       <div className="grid cols-4">
         <StatCard title="Total Employees" subtitle="Company strength" value="2,685" delta="Updated 2 mins ago" icon={<Users size={16} />} />
         <StatCard title="Active" subtitle="Using health services" value="2,507" delta="93.4% active" icon={<Activity size={16} />} />
@@ -38,3 +38,4 @@ export function WorkforcePage() {
     </div>
   );
 }
+

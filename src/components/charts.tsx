@@ -18,6 +18,14 @@ const pieData = [
 ];
 
 const pieColors = ['#6e3df1', '#9470f6', '#b8a0fb', '#ddd1fe'];
+const savingsBreakdownData = [
+  { name: 'Hospital Visits Avoided', value: 21.0, amount: '₹21.0L' },
+  { name: 'In-office Medicine', value: 8.9, amount: '₹8.9L' },
+  { name: 'Lab Tests at Office', value: 5.6, amount: '₹5.6L' },
+  { name: 'Reduced Sick Days', value: 12.4, amount: '₹12.4L' },
+  { name: 'Preventive Care', value: 8.6, amount: '₹8.6L' },
+];
+const savingsColors = ['#1db96a', '#40c57c', '#68cf96', '#8fdab0', '#b6e7cb'];
 
 export function LineTrendChart({ color = 'var(--brand)' }: { color?: string }) {
   return (
@@ -104,6 +112,33 @@ export function SavingsCompareChart() {
           <Bar dataKey="alt" radius={[8, 8, 0, 0]} fill="#6f3cf0" />
         </BarChart>
       </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function SavingsBreakdownPie() {
+  return (
+    <div className="roi-breakdown">
+      <div className="roi-breakdown-chart">
+        <ResponsiveContainer width={260} height={260}>
+          <PieChart>
+            <Pie data={savingsBreakdownData} dataKey="value" innerRadius={72} outerRadius={102} stroke="#fff" strokeWidth={2}>
+              {savingsBreakdownData.map((entry, index) => (
+                <Cell key={entry.name} fill={savingsColors[index % savingsColors.length]} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="roi-breakdown-legend">
+        {savingsBreakdownData.map((item, index) => (
+          <div className="roi-legend-row" key={item.name}>
+            <span className="roi-dot" style={{ backgroundColor: savingsColors[index % savingsColors.length] }} />
+            <span>{item.name}</span>
+            <strong>{item.amount}</strong>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

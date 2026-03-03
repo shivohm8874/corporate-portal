@@ -4,7 +4,7 @@ import { ProgressBar, SectionTitle, StatCard } from '../components/ui';
 export function ProgramsPage() {
   return (
     <div className="page page-programs">
-      <SectionTitle title="Programs & Interventions" subtitle="Track active health programs and participation metrics" action={<button className="primary-btn">+ Launch Program</button>} />
+      <SectionTitle title="Health Programs" subtitle="Track participation, completion, and drop-off" action={<button className="primary-btn">+ Launch Program</button>} />
       <div className="grid cols-4">
         <StatCard title="Active Programs" subtitle="Currently running" value="4" delta="+1 started this month" icon={<Target size={16} />} />
         <StatCard title="Total Participants" subtitle="Across all programs" value="2,247" delta="84% of workforce" icon={<UsersRound size={16} />} />
@@ -31,3 +31,4 @@ export function ProgramsPage() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   BadgeIndianRupee,
@@ -35,15 +35,15 @@ import './styles/auth.css';
 import './styles/pages.css';
 
 const navItems: NavItem[] = [
-  { key: 'command', label: 'Command Center', icon: <LayoutDashboard size={16} /> },
-  { key: 'credit', label: 'Credit Control', icon: <WalletCards size={16} /> },
-  { key: 'payments', label: 'Payments', icon: <BadgeIndianRupee size={16} /> },
-  { key: 'workforce', label: 'Workforce', icon: <Users size={16} /> },
-  { key: 'payroll', label: 'Payroll', icon: <Workflow size={16} /> },
-  { key: 'health', label: 'Health Intelligence', icon: <Activity size={16} /> },
+  { key: 'command', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+  { key: 'credit', label: 'Credits', icon: <WalletCards size={16} /> },
+  { key: 'payments', label: 'Billing', icon: <BadgeIndianRupee size={16} /> },
+  { key: 'workforce', label: 'Employees', icon: <Users size={16} /> },
+  { key: 'payroll', label: 'Payroll Sync', icon: <Workflow size={16} /> },
+  { key: 'health', label: 'Health Insights', icon: <Activity size={16} /> },
   { key: 'programs', label: 'Programs', icon: <Target size={16} /> },
-  { key: 'savings', label: 'Savings & ROI', icon: <ChartNoAxesColumnIncreasing size={16} /> },
-  { key: 'forecasting', label: 'Forecasting', icon: <ChartColumnBig size={16} /> },
+  { key: 'savings', label: 'Savings', icon: <ChartNoAxesColumnIncreasing size={16} /> },
+  { key: 'forecasting', label: 'Forecast', icon: <ChartColumnBig size={16} /> },
   { key: 'alerts', label: 'Alerts', icon: <Bell size={16} /> },
   { key: 'policies', label: 'Policies', icon: <Shield size={16} /> },
   { key: 'reports', label: 'Reports', icon: <FileText size={16} /> },
@@ -90,6 +90,7 @@ function getPageView(page: PageKey) {
 }
 
 function App() {
+  const DESKTOP_MIN_WIDTH = 1024;
   const [current, setCurrent] = useState<PageKey>('command');
   const [authStep, setAuthStep] = useState<'corporate' | 'login' | 'ready'>('corporate');
   const [corporateIdInput, setCorporateIdInput] = useState('');
@@ -98,8 +99,28 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [companyName, setCompanyName] = useState('HCLTech');
   const [companyDisplayId, setCompanyDisplayId] = useState('HCL-001');
+  const [desktopAllowed, setDesktopAllowed] = useState(typeof window !== 'undefined' ? window.innerWidth >= DESKTOP_MIN_WIDTH : true);
 
   const authHint = useMemo(() => 'Demo Corporate IDs: HCL001, TCS101, INFY777', []);
+
+  useEffect(() => {
+    const onResize = () => setDesktopAllowed(window.innerWidth >= DESKTOP_MIN_WIDTH);
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  if (!desktopAllowed) {
+    return (
+      <main className="desktop-only-wrap">
+        <section className="desktop-only-card">
+          <h1>Employee Health Portal</h1>
+          <p>Please login through desktop for the best and secure experience.</p>
+          <small>This portal is currently optimized for desktop screens only.</small>
+        </section>
+      </main>
+    );
+  }
 
   const authorizeCorporate = () => {
     const key = corporateIdInput.trim().toUpperCase();

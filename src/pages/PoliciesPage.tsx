@@ -3,7 +3,7 @@
 export function PoliciesPage() {
   return (
     <div className="page page-policies">
-      <SectionTitle title="Policies & Privacy" subtitle="Governance for health data, payroll integration, and compliance" />
+      <SectionTitle title="Policies & Privacy" subtitle="Data rules, access, and compliance settings" />
       <div className="grid cols-2">
         <section className="card panel">
           <h2>Data Governance</h2>
@@ -27,3 +27,4 @@ export function PoliciesPage() {
     </div>
   );
 }
+
