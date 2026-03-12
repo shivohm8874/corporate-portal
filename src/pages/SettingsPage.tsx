@@ -1,13 +1,15 @@
 ﻿import { SectionTitle } from '../components/ui';
+import { getCorporateSession } from '../services/authApi';
 
 export function SettingsPage() {
+  const session = getCorporateSession();
   return (
     <div className="page page-settings">
       <SectionTitle title="Settings" subtitle="Manage company profile, integrations, and alerts" />
       <div className="grid cols-2">
         <section className="card panel">
           <h2>Organization</h2>
-          <label>Company Name<input className="input" defaultValue="HCLTech" /></label>
+          <label>Company Name<input className="input" defaultValue={session?.companyName ?? 'Astikan'} /></label>
           <label>Wellness Program Budget<input className="input" defaultValue="₹1.7Cr / year" /></label>
           <label>Timezone<input className="input" defaultValue="Asia/Kolkata" /></label>
           <button className="primary-btn">Save Profile</button>
@@ -23,4 +25,3 @@ export function SettingsPage() {
     </div>
   );
 }
-

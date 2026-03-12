@@ -1,19 +1,39 @@
-﻿import { Users, WalletCards, ChartNoAxesColumnIncreasing, Clock3 } from 'lucide-react';
-import { LineTrendChart, RingScore } from '../components/charts';
-import { SectionTitle, StatCard } from '../components/ui';
+import { useMemo, useState } from "react";
+import { Users, WalletCards, ChartNoAxesColumnIncreasing, Clock3 } from "lucide-react";
+import { LineTrendChart, RingScore } from "../components/charts";
+import { AnalysisRangeBar, SectionTitle, StatCard } from "../components/ui";
+import type { AnalysisRange } from "../components/ui";
+
+const multiplier: Record<AnalysisRange, number> = {
+  Week: 0.26,
+  Month: 1,
+  Year: 12,
+};
 
 const metricCards = [
-  { title: 'Credit Coins Remaining', subtitle: 'Employees using for services', value: '37.1L', delta: '-128K today', icon: <WalletCards size={16} />, tone: 'brand' as const, deltaTone: 'negative' as const },
-  { title: 'Daily Burn Rate', subtitle: 'Active service usage', value: '128K', delta: '+8% vs last week', icon: <ChartNoAxesColumnIncreasing size={16} />, tone: 'warning' as const, deltaTone: 'positive' as const },
-  { title: 'Credits Last For', subtitle: 'At current usage rate', value: '29 days', delta: 'Runway healthy', icon: <Clock3 size={16} />, tone: 'info' as const, deltaTone: 'positive' as const },
-  { title: 'Employee Engagement', subtitle: 'Actively using services', value: '92.3%', delta: '+2.1% this month', icon: <Users size={16} />, tone: 'success' as const, deltaTone: 'positive' as const },
+  { title: "Credit Coins Remaining", subtitle: "Employees using for services", value: 3710000, delta: "-128K today", icon: <WalletCards size={16} />, tone: "brand" as const, deltaTone: "negative" as const },
+  { title: "Daily Burn Rate", subtitle: "Active service usage", value: 128000, delta: "+8% vs last week", icon: <ChartNoAxesColumnIncreasing size={16} />, tone: "warning" as const, deltaTone: "positive" as const },
+  { title: "Credits Last For", subtitle: "At current usage rate", value: 29, delta: "Runway healthy", icon: <Clock3 size={16} />, tone: "info" as const, deltaTone: "positive" as const },
+  { title: "Employee Engagement", subtitle: "Actively using services", value: 92.3, delta: "+2.1% this month", icon: <Users size={16} />, tone: "success" as const, deltaTone: "positive" as const },
 ];
 
 export function CommandCenterPage() {
+  const [range, setRange] = useState<AnalysisRange>("Month");
+  const factor = multiplier[range];
+
+  const cards = useMemo(() => {
+    return metricCards.map((card) => {
+      if (card.title === "Credits Last For") return { ...card, value: `${Math.max(Math.round(card.value / factor), 1)} days` };
+      if (card.title === "Employee Engagement") return { ...card, value: `${Math.min(Math.round(card.value), 99)}%` };
+      return { ...card, value: `${Math.round(card.value * factor).toLocaleString("en-IN")}` };
+    });
+  }, [factor]);
+
   return (
     <div className="page page-command">
-      <SectionTitle title="Dashboard" subtitle="See your key health and credit numbers in one place" action={<button className="primary-btn">Refill Credits</button>} />
-      <div className="grid cols-4">{metricCards.map((card) => <StatCard key={card.title} {...card} />)}</div>
+      <SectionTitle title="Dashboard" subtitle={`See key health and credit numbers (${range} analysis)`} action={<button className="primary-btn">Refill Credits</button>} />
+      <AnalysisRangeBar value={range} onChange={setRange} />
+      <div className="grid cols-4">{cards.map((card) => <StatCard key={card.title} {...card} />)}</div>
       <div className="grid cols-2-big">
         <section className="card panel">
           <div className="panel-head">
@@ -21,51 +41,22 @@ export function CommandCenterPage() {
             <button className="ghost-btn">Refill Now</button>
           </div>
           <div className="highlight-strip">
-            <div><small>Current Balance</small><strong>₹37.1L</strong></div>
-            <div><small>Will last for</small><strong>29 days</strong></div>
+            <div><small>Current Balance</small><strong>{cards[0]?.value}</strong></div>
+            <div><small>Will last for</small><strong>{cards[2]?.value}</strong></div>
           </div>
           <LineTrendChart />
         </section>
         <section className="card panel">
           <h2>Overall Wellness Index</h2>
-          <p className="muted">Company-wide aggregate only</p>
-          <RingScore score={78} label="Healthy" />
+          <p className="muted">Company-wide aggregate ({range})</p>
+          <RingScore score={range === "Year" ? 81 : range === "Week" ? 76 : 78} label="Healthy" />
           <div className="kpi-list">
-            <div><span>Service Utilization</span><strong>82%</strong></div>
-            <div><span>Active Users</span><strong>92%</strong></div>
-            <div><span>Engagement Score</span><strong>85%</strong></div>
+            <div><span>Service Utilization</span><strong>{range === "Year" ? "86%" : range === "Week" ? "79%" : "82%"}</strong></div>
+            <div><span>Active Users</span><strong>{range === "Year" ? "94%" : range === "Week" ? "89%" : "92%"}</strong></div>
+            <div><span>Engagement Score</span><strong>{range === "Year" ? "88%" : range === "Week" ? "82%" : "85%"}</strong></div>
           </div>
         </section>
       </div>
-      <section className="card panel">
-        <div className="panel-head"><h2>Time & Productivity Savings</h2><span className="chip chip-green">2,180 hours saved this month</span></div>
-        <div className="grid cols-3">
-          {[
-            ['Tele-consultations', '940 hrs', 'No hospital visits needed'],
-            ['In-office Medicine', '680 hrs', 'No pharmacy trips'],
-            ['On-site Lab Tests', '560 hrs', 'Done at office'],
-          ].map((item) => (
-            <div className="soft-card" key={item[0]}>
-              <small>{item[0]}</small><strong>{item[1]}</strong><span>{item[2]}</span>
-            </div>
-          ))}
-        </div>
-        <LineTrendChart color="var(--good)" />
-      </section>
-      <section className="card panel">
-        <div className="panel-head"><h2>Active Alerts</h2><button className="text-btn">View all</button></div>
-        {[
-          ['Low Credit Balance Alert', 'warning', 'Coins will run out in 28 days at current burn rate.'],
-          ['High Employee Engagement', 'success', '92% employees actively using wellness services.'],
-          ['Time Savings Milestone', 'info', '2,180 hours saved this month through on-site services.'],
-        ].map((a) => (
-          <article className="alert-row" key={a[0]}>
-            <div><h4>{a[0]} <span className={`chip chip-${a[1]}`}>{a[1]}</span></h4><p>{a[2]}</p></div>
-            <button className="link-btn">Open</button>
-          </article>
-        ))}
-      </section>
     </div>
   );
 }
-

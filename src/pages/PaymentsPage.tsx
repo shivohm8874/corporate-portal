@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Activity, ArrowDownToLine, Banknote, CalendarClock, CircleDollarSign, Download, Search, ShieldCheck, Wallet } from 'lucide-react';
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { SectionTitle, StatCard } from '../components/ui';
+import { jsPDF } from 'jspdf';
+import { AnalysisRangeBar, SectionTitle, StatCard } from '../components/ui';
+import type { AnalysisRange } from '../components/ui';
 
 type InvoiceStatus = 'paid' | 'pending' | 'overdue';
 
@@ -49,6 +51,8 @@ const monthlyBillingData = [
   { month: 'Mar', paid: 130, budget: 180 },
 ];
 
+const monthLabels = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 function statusChipClass(status: InvoiceStatus) {
   if (status === 'paid') return 'chip chip-green';
   if (status === 'pending') return 'chip chip-warning';
@@ -56,8 +60,14 @@ function statusChipClass(status: InvoiceStatus) {
 }
 
 export function PaymentsPage() {
+  const [range, setRange] = useState<AnalysisRange>('Month');
   const [statusFilter, setStatusFilter] = useState<'all' | InvoiceStatus>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportMonth, setExportMonth] = useState(new Date().getMonth());
+  const [exportYear, setExportYear] = useState(new Date().getFullYear());
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [exportStatus, setExportStatus] = useState('');
 
   const filteredInvoices = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -68,24 +78,113 @@ export function PaymentsPage() {
     });
   }, [searchQuery, statusFilter]);
 
+  const exportYearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, index) => currentYear - 4 + index);
+  }, []);
+  const rangeFactor = range === 'Week' ? 0.26 : range === 'Year' ? 12 : 1;
+  const billed = Math.round(471000 * rangeFactor);
+  const pending = Math.round(129000 * rangeFactor);
+  const purchased = Math.round(530000 * rangeFactor);
+
+  const parseAmount = (value: string) => Number(value.replace(/[^0-9.]/g, '')) || 0;
+  const getDate = (value: string) => new Date(value);
+  const sameMonthYear = (value: string, month: number, year: number) => {
+    const d = getDate(value);
+    return d.getMonth() === month && d.getFullYear() === year;
+  };
+
+  function exportReportPdf() {
+    setExportingPdf(true);
+    setExportStatus('');
+    const selectedInvoices = invoices.filter((item) => sameMonthYear(item.date, exportMonth, exportYear));
+    const selectedTransactions = transactions.filter((item) => sameMonthYear(item.date, exportMonth, exportYear));
+    const totalInvoiceValue = selectedInvoices.reduce((sum, item) => sum + parseAmount(item.total), 0);
+    const totalTransactionValue = selectedTransactions.reduce((sum, item) => sum + parseAmount(item.amount), 0);
+
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    let y = 50;
+    const lineGap = 20;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text('Billing & Payments Report', 40, y);
+    y += lineGap;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(`Period: ${monthLabels[exportMonth]} ${exportYear}`, 40, y);
+    y += lineGap;
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 40, y);
+    y += lineGap * 1.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', 40, y);
+    y += lineGap;
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Invoices: ${selectedInvoices.length}`, 40, y);
+    y += lineGap;
+    doc.text(`Transactions: ${selectedTransactions.length}`, 40, y);
+    y += lineGap;
+    doc.text(`Invoice total: INR ${totalInvoiceValue.toLocaleString('en-IN')}`, 40, y);
+    y += lineGap;
+    doc.text(`Collection total: INR ${totalTransactionValue.toLocaleString('en-IN')}`, 40, y);
+    y += lineGap * 1.5;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Invoices', 40, y);
+    y += lineGap;
+    doc.setFont('helvetica', 'normal');
+    if (selectedInvoices.length === 0) {
+      doc.text('No invoices found for this period.', 40, y);
+      y += lineGap;
+    } else {
+      selectedInvoices.forEach((item) => {
+        doc.text(`${item.id} | ${item.date} | ${item.total} | ${item.status}`, 40, y);
+        y += lineGap;
+      });
+    }
+
+    y += lineGap * 0.5;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Transactions', 40, y);
+    y += lineGap;
+    doc.setFont('helvetica', 'normal');
+    if (selectedTransactions.length === 0) {
+      doc.text('No transactions found for this period.', 40, y);
+    } else {
+      selectedTransactions.forEach((item) => {
+        doc.text(`${item.id} | ${item.date} | ${item.amount} | ${item.status}`, 40, y);
+        y += lineGap;
+      });
+    }
+
+    const monthNum = String(exportMonth + 1).padStart(2, '0');
+    doc.save(`billing-report-${exportYear}-${monthNum}.pdf`);
+    setExportingPdf(false);
+    setExportStatus(`Report exported: ${monthLabels[exportMonth]} ${exportYear} (PDF).`);
+    setExportModalOpen(false);
+  }
+
   return (
     <div className="page page-payments">
       <SectionTitle
         title="Billing & Payments"
-        subtitle="Track payment operations, invoice status, and spend trends with faster finance actions."
+        subtitle={`Track payment operations, invoice status, and spend trends (${range} analysis).`}
         action={
           <div className="row-gap">
-            <button className="ghost-btn"><ArrowDownToLine size={15} />Export report</button>
+            <button className="ghost-btn" onClick={() => setExportModalOpen(true)}><ArrowDownToLine size={15} />Export report</button>
             <button className="primary-btn"><CircleDollarSign size={15} />Record payment</button>
           </div>
         }
       />
+      <AnalysisRangeBar value={range} onChange={setRange} />
+      {exportStatus && <p className="export-status">{exportStatus}</p>}
 
       <div className="grid cols-4">
-        <StatCard title="Current Month Billed" subtitle="Total posted invoices" value="₹4.71L" delta="+9.3% vs last month" icon={<Banknote size={16} />} tone="info" />
+        <StatCard title="Current Billed Value" subtitle="Total posted invoices" value={`₹${billed.toLocaleString('en-IN')}`} delta="+9.3% trend" icon={<Banknote size={16} />} tone="info" />
         <StatCard title="Paid Collection Rate" subtitle="Settled within billing cycle" value="93.8%" delta="Strong collection health" icon={<ShieldCheck size={16} />} tone="success" />
-        <StatCard title="Pending Collection" subtitle="Requires finance action" value="₹1.29L" delta="1 invoice due this week" icon={<CalendarClock size={16} />} tone="warning" deltaTone="negative" />
-        <StatCard title="Credits Purchased" subtitle="Across all payment methods" value="530,000" delta="+80,000 this cycle" icon={<Wallet size={16} />} tone="brand" />
+        <StatCard title="Pending Collection" subtitle="Requires finance action" value={`₹${pending.toLocaleString('en-IN')}`} delta="Follow-up required" icon={<CalendarClock size={16} />} tone="warning" deltaTone="negative" />
+        <StatCard title="Credits Purchased" subtitle="Across all payment methods" value={purchased.toLocaleString('en-IN')} delta="+trend over baseline" icon={<Wallet size={16} />} tone="brand" />
       </div>
 
       <div className="grid cols-2">
@@ -220,6 +319,37 @@ export function PaymentsPage() {
           ))}
         </div>
       </section>
+
+      {exportModalOpen && (
+        <div className="export-modal-overlay" role="dialog" aria-modal="true">
+          <section className="export-modal-card">
+            <h3>Export Billing Report (PDF)</h3>
+            <p>Select month and year for export.</p>
+            <label>
+              Month
+              <select className="input" value={exportMonth} onChange={(event) => setExportMonth(Number(event.target.value))}>
+                {monthLabels.map((item, index) => (
+                  <option value={index} key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Year
+              <select className="input" value={exportYear} onChange={(event) => setExportYear(Number(event.target.value))}>
+                {exportYearOptions.map((year) => (
+                  <option value={year} key={year}>{year}</option>
+                ))}
+              </select>
+            </label>
+            <div className="export-modal-actions">
+              <button className="ghost-btn" onClick={() => setExportModalOpen(false)} disabled={exportingPdf}>Cancel</button>
+              <button className="primary-btn" onClick={exportReportPdf} disabled={exportingPdf}>
+                {exportingPdf ? 'Exporting...' : 'Export PDF'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

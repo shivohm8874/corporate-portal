@@ -15,6 +15,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import type { NavItem, PageKey } from './types/app';
+import { authorizeCorporate, clearCorporateSession, getCorporateSession, loginCorporate, saveCorporateSession } from './services/authApi';
 import {
   AlertsPage,
   CommandCenterPage,
@@ -49,12 +50,6 @@ const navItems: NavItem[] = [
   { key: 'reports', label: 'Reports', icon: <FileText size={16} /> },
   { key: 'settings', label: 'Settings', icon: <Wrench size={16} /> },
 ];
-
-const corporateDirectory: Record<string, { companyName: string; displayId: string }> = {
-  HCL001: { companyName: 'HCLTech', displayId: 'HCL-001' },
-  TCS101: { companyName: 'TCS', displayId: 'TCS-101' },
-  INFY777: { companyName: 'Infosys', displayId: 'INFY-777' },
-};
 
 function getPageView(page: PageKey) {
   switch (page) {
@@ -97,17 +92,26 @@ function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [companyName, setCompanyName] = useState('HCLTech');
-  const [companyDisplayId, setCompanyDisplayId] = useState('HCL-001');
+  const [companyName, setCompanyName] = useState('Astikan');
+  const [companyDisplayId, setCompanyDisplayId] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [desktopAllowed, setDesktopAllowed] = useState(typeof window !== 'undefined' ? window.innerWidth >= DESKTOP_MIN_WIDTH : true);
 
-  const authHint = useMemo(() => 'Demo Corporate IDs: HCL001, TCS101, INFY777', []);
+  const authHint = useMemo(() => 'Use your Astikan corporate ID from the backend access table.', []);
 
   useEffect(() => {
     const onResize = () => setDesktopAllowed(window.innerWidth >= DESKTOP_MIN_WIDTH);
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    const session = getCorporateSession();
+    if (!session) return;
+    setCompanyName(session.companyName ?? 'Astikan');
+    setCompanyDisplayId(session.corporateId);
+    setAuthStep('ready');
   }, []);
 
   if (!desktopAllowed) {
@@ -122,28 +126,44 @@ function App() {
     );
   }
 
-  const authorizeCorporate = () => {
+  const authorizeCorporateStep = async () => {
     const key = corporateIdInput.trim().toUpperCase();
-    const matched = corporateDirectory[key];
-    if (!matched) {
-      setAuthError('Corporate ID not found. Please check and try again.');
+    if (!key) {
+      setAuthError('Corporate ID is required.');
       return;
     }
 
-    setCompanyName(matched.companyName);
-    setCompanyDisplayId(matched.displayId);
-    setAuthError('');
-    setAuthStep('login');
+    setAuthLoading(true);
+    try {
+      const payload = await authorizeCorporate(key);
+      setCompanyName(payload.companyName);
+      setCompanyDisplayId(payload.corporateId);
+      setAuthError('');
+      setAuthStep('login');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Corporate ID not found. Please check and try again.');
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
-  const loginUser = () => {
+  const loginUser = async () => {
     if (!username.trim() || !password.trim()) {
       setAuthError('Enter username and password to continue.');
       return;
     }
 
-    setAuthError('');
-    setAuthStep('ready');
+    setAuthLoading(true);
+    try {
+      const payload = await loginCorporate(companyDisplayId, username, password);
+      saveCorporateSession({ ...payload, corporateId: companyDisplayId });
+      setAuthError('');
+      setAuthStep('ready');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Unable to sign in.');
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   if (authStep !== 'ready') {
@@ -160,7 +180,9 @@ function App() {
                   Corporate ID
                   <input className="input" placeholder="Enter Corporate ID (e.g. HCL001)" value={corporateIdInput} onChange={(e) => setCorporateIdInput(e.target.value)} />
                 </label>
-                <button className="primary-btn" onClick={authorizeCorporate}>Authorize Corporate</button>
+                <button className="primary-btn" onClick={() => void authorizeCorporateStep()} disabled={authLoading}>
+                  {authLoading ? 'Authorizing...' : 'Authorize Corporate'}
+                </button>
                 <small>{authHint}</small>
               </>
             ) : (
@@ -177,8 +199,10 @@ function App() {
                   Password
                   <input className="input" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </label>
-                <button className="primary-btn" onClick={loginUser}>Sign in</button>
-                <button className="ghost-btn" onClick={() => setAuthStep('corporate')}>Back to Corporate ID</button>
+                <button className="primary-btn" onClick={() => void loginUser()} disabled={authLoading}>
+                  {authLoading ? 'Signing in...' : 'Sign in'}
+                </button>
+                <button className="ghost-btn" onClick={() => setAuthStep('corporate')} disabled={authLoading}>Back to Corporate ID</button>
               </>
             )}
 
@@ -227,7 +251,18 @@ function App() {
           <small>Quick Stats</small>
           <strong>2,847 Active Users</strong>
           <span>Sync: 2 mins ago</span>
-          <button className="ghost-btn" onClick={() => setAuthStep('corporate')}>Switch Corporate</button>
+          <button
+            className="ghost-btn"
+            onClick={() => {
+              clearCorporateSession();
+              setAuthStep('corporate');
+              setCorporateIdInput('');
+              setUsername('');
+              setPassword('');
+            }}
+          >
+            Logout
+          </button>
         </div>
       </aside>
 

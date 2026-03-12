@@ -1,25 +1,26 @@
-﻿import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import type { ReactNode } from "react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
-type CardTone = 'brand' | 'success' | 'warning' | 'danger' | 'info' | 'neutral';
-type DeltaTone = 'positive' | 'negative' | 'neutral';
+type CardTone = "brand" | "success" | "warning" | "danger" | "info" | "neutral";
+type DeltaTone = "positive" | "negative" | "neutral";
+export type AnalysisRange = "Week" | "Month" | "Year";
 
 function inferCardTone(title: string): CardTone {
   const t = title.toLowerCase();
-  if (t.includes('failed') || t.includes('inactive') || t.includes('drop-off')) return 'danger';
-  if (t.includes('saved') || t.includes('engagement') || t.includes('active')) return 'success';
-  if (t.includes('burn') || t.includes('cost')) return 'warning';
-  if (t.includes('sync') || t.includes('forecast')) return 'info';
-  if (t.includes('last') || t.includes('remaining')) return 'brand';
-  return 'neutral';
+  if (t.includes("failed") || t.includes("inactive") || t.includes("drop-off")) return "danger";
+  if (t.includes("saved") || t.includes("engagement") || t.includes("active")) return "success";
+  if (t.includes("burn") || t.includes("cost")) return "warning";
+  if (t.includes("sync") || t.includes("forecast")) return "info";
+  if (t.includes("last") || t.includes("remaining")) return "brand";
+  return "neutral";
 }
 
 function inferDeltaTone(delta: string): DeltaTone {
   const d = delta.toLowerCase();
-  if (d.includes('+') || d.includes('healthy') || d.includes('active') || d.includes('strong')) return 'positive';
-  if (d.includes('-') || d.includes('needs') || d.includes('error') || d.includes('failed')) return 'negative';
-  return 'neutral';
+  if (d.includes("+") || d.includes("healthy") || d.includes("active") || d.includes("strong")) return "positive";
+  if (d.includes("-") || d.includes("needs") || d.includes("error") || d.includes("failed")) return "negative";
+  return "neutral";
 }
 
 export function SectionTitle({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
@@ -73,6 +74,25 @@ export function ProgressBar({ value, color }: { value: number; color?: string })
   return (
     <div className="progress-shell">
       <div className="progress-fill" style={{ width: `${value}%`, background: color }} />
+    </div>
+  );
+}
+
+export function AnalysisRangeBar({
+  value,
+  onChange,
+}: {
+  value: AnalysisRange;
+  onChange: (value: AnalysisRange) => void;
+}) {
+  const ranges: AnalysisRange[] = ["Week", "Month", "Year"];
+  return (
+    <div className="analysis-range-bar">
+      {ranges.map((range) => (
+        <button key={range} className={`ghost-btn ${value === range ? "tab-active" : ""}`} onClick={() => onChange(range)}>
+          {range}
+        </button>
+      ))}
     </div>
   );
 }
