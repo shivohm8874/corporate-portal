@@ -19,23 +19,33 @@ export type CorporateLoginResponse = {
 }
 
 const CORPORATE_SESSION_KEY = "astikan_corporate_session"
+const CORPORATE_SESSION_KEY_FALLBACK = "astikan_corporate_session"
 
 export function saveCorporateSession(payload: CorporateLoginResponse & { corporateId: string }) {
-  localStorage.setItem(CORPORATE_SESSION_KEY, JSON.stringify(payload))
+  sessionStorage.setItem(CORPORATE_SESSION_KEY, JSON.stringify(payload))
 }
 
 export function getCorporateSession(): (CorporateLoginResponse & { corporateId: string }) | null {
-  const raw = localStorage.getItem(CORPORATE_SESSION_KEY)
-  if (!raw) return null
+  const raw = sessionStorage.getItem(CORPORATE_SESSION_KEY)
+  if (raw) {
+    try {
+      return JSON.parse(raw) as CorporateLoginResponse & { corporateId: string }
+    } catch {
+      // fall through
+    }
+  }
+  const legacy = localStorage.getItem(CORPORATE_SESSION_KEY_FALLBACK)
+  if (!legacy) return null
   try {
-    return JSON.parse(raw) as CorporateLoginResponse & { corporateId: string }
+    return JSON.parse(legacy) as CorporateLoginResponse & { corporateId: string }
   } catch {
     return null
   }
 }
 
 export function clearCorporateSession() {
-  localStorage.removeItem(CORPORATE_SESSION_KEY)
+  sessionStorage.removeItem(CORPORATE_SESSION_KEY)
+  localStorage.removeItem(CORPORATE_SESSION_KEY_FALLBACK)
 }
 
 export function authorizeCorporate(corporateId: string) {

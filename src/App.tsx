@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   BadgeIndianRupee,
@@ -87,17 +87,22 @@ function getPageView(page: PageKey) {
 function App() {
   const DESKTOP_MIN_WIDTH = 1024;
   const [current, setCurrent] = useState<PageKey>('command');
-  const [authStep, setAuthStep] = useState<'corporate' | 'login' | 'ready'>('corporate');
+  const [authStep, setAuthStep] = useState<'corporate' | 'login' | 'forgot' | 'reset' | 'ready'>('corporate');
   const [corporateIdInput, setCorporateIdInput] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authInfo, setAuthInfo] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCorporateId, setResetCorporateId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [companyName, setCompanyName] = useState('Astikan');
   const [companyDisplayId, setCompanyDisplayId] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [desktopAllowed, setDesktopAllowed] = useState(typeof window !== 'undefined' ? window.innerWidth >= DESKTOP_MIN_WIDTH : true);
 
-  const authHint = useMemo(() => 'Use your Astikan corporate ID from the backend access table.', []);
+  const CORPORATE_ID_KEY = 'corporate_id_session';
 
   useEffect(() => {
     const onResize = () => setDesktopAllowed(window.innerWidth >= DESKTOP_MIN_WIDTH);
@@ -114,11 +119,16 @@ function App() {
     setAuthStep('ready');
   }, []);
 
+  useEffect(() => {
+    const savedId = sessionStorage.getItem(CORPORATE_ID_KEY);
+    if (savedId) setCorporateIdInput(savedId);
+  }, []);
+
   if (!desktopAllowed) {
     return (
       <main className="desktop-only-wrap">
         <section className="desktop-only-card">
-          <h1>Employee Health Portal</h1>
+          <h1>Astikan Corporate Intelligence</h1>
           <p>Please login through desktop for the best and secure experience.</p>
           <small>This portal is currently optimized for desktop screens only.</small>
         </section>
@@ -129,7 +139,7 @@ function App() {
   const authorizeCorporateStep = async () => {
     const key = corporateIdInput.trim().toUpperCase();
     if (!key) {
-      setAuthError('Corporate ID is required.');
+      setAuthError('');
       return;
     }
 
@@ -138,7 +148,9 @@ function App() {
       const payload = await authorizeCorporate(key);
       setCompanyName(payload.companyName);
       setCompanyDisplayId(payload.corporateId);
+      sessionStorage.setItem(CORPORATE_ID_KEY, payload.corporateId);
       setAuthError('');
+      setAuthInfo('');
       setAuthStep('login');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Corporate ID not found. Please check and try again.');
@@ -158,6 +170,7 @@ function App() {
       const payload = await loginCorporate(companyDisplayId, username, password);
       saveCorporateSession({ ...payload, corporateId: companyDisplayId });
       setAuthError('');
+      setAuthInfo('');
       setAuthStep('ready');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Unable to sign in.');
@@ -171,21 +184,26 @@ function App() {
       <main className="login-wrap">
         <section className="login-shell fade-up">
           <article className="login-card">
-            <h1>Employee Health Portal</h1>
+            <h1>Astikan Corporate Intelligence</h1>
             <p>Enterprise wellness intelligence platform for payroll-linked analytics and health credit operations.</p>
 
             {authStep === 'corporate' ? (
               <>
                 <label>
-                  Corporate ID
-                  <input className="input" placeholder="Enter Corporate ID (e.g. HCL001)" value={corporateIdInput} onChange={(e) => setCorporateIdInput(e.target.value)} />
+                  Corporate ID <span className="required">*</span>
+                  <input
+                    className="input"
+                    placeholder="Enter Corporate ID (e.g. HCL001)"
+                    value={corporateIdInput}
+                    onChange={(e) => setCorporateIdInput(e.target.value)}
+                    required
+                  />
                 </label>
                 <button className="primary-btn" onClick={() => void authorizeCorporateStep()} disabled={authLoading}>
                   {authLoading ? 'Authorizing...' : 'Authorize Corporate'}
                 </button>
-                <small>{authHint}</small>
               </>
-            ) : (
+            ) : authStep === 'login' ? (
               <>
                 <div className="auth-company-block">
                   <strong>{companyName}</strong>
@@ -199,29 +217,147 @@ function App() {
                   Password
                   <input className="input" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </label>
+                <button
+                  className="link-btn"
+                  type="button"
+                  onClick={() => {
+                    setAuthError('');
+                    setAuthInfo('');
+                    setResetCorporateId(companyDisplayId);
+                    setAuthStep('forgot');
+                  }}
+                >
+                  Forgot password?
+                </button>
                 <button className="primary-btn" onClick={() => void loginUser()} disabled={authLoading}>
                   {authLoading ? 'Signing in...' : 'Sign in'}
                 </button>
-                <button className="ghost-btn" onClick={() => setAuthStep('corporate')} disabled={authLoading}>Back to Corporate ID</button>
+              </>
+            ) : authStep === 'forgot' ? (
+              <>
+                <label>
+                  Corporate Email
+                  <input
+                    className="input"
+                    type="email"
+                    placeholder="Enter corporate email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Corporate ID <span className="required">*</span>
+                  <input
+                    className="input"
+                    placeholder="Enter Corporate ID"
+                    value={resetCorporateId}
+                    onChange={(e) => setResetCorporateId(e.target.value)}
+                    required
+                  />
+                </label>
+                <button
+                  className="primary-btn"
+                  type="button"
+                  onClick={() => {
+                    if (!resetCorporateId.trim() || !resetEmail.trim()) {
+                      setAuthError('Please enter corporate email and ID.');
+                      return;
+                    }
+                    setAuthError('');
+                    setAuthInfo('Reset link sent. Please create a new password.');
+                    setAuthStep('reset');
+                  }}
+                >
+                  Send reset link
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="auth-company-block">
+                  <strong>Password reset</strong>
+                  <span>{resetCorporateId || companyDisplayId}</span>
+                </div>
+                <label>
+                  New password
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="Create new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </label>
+                <label>
+                  Confirm password
+                  <input
+                    className="input"
+                    type="password"
+                    placeholder="Re-enter new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </label>
+                <button
+                  className="primary-btn"
+                  type="button"
+                  onClick={() => {
+                    if (!newPassword || newPassword.length < 6) {
+                      setAuthError('Password must be at least 6 characters.');
+                      return;
+                    }
+                    if (newPassword !== confirmPassword) {
+                      setAuthError('Passwords do not match.');
+                      return;
+                    }
+                    setAuthError('');
+                    setAuthInfo('Password updated. Please sign in.');
+                    setAuthStep('login');
+                  }}
+                >
+                  Set new password
+                </button>
               </>
             )}
 
             {authError && <p className="auth-error">{authError}</p>}
+            {authInfo && <p className="auth-info">{authInfo}</p>}
           </article>
 
           <article className="login-visual">
             <div className="orb orb-one" />
             <div className="orb orb-two" />
             <div className="orb orb-three" />
-            <div className="glass-panel">
-              <h3>Employee Health Portal</h3>
-              <p>Corporate health intelligence with animated dashboards, trend graphs, pie analytics and payroll integration insights.</p>
-              <div className="mini-slider">
-                <div className="slide-track">
-                  <div className="slide-item"><small>Wellness Score</small><strong>78%</strong></div>
-                  <div className="slide-item"><small>Active Employees</small><strong>2,507</strong></div>
-                  <div className="slide-item"><small>Projected Savings</small><strong>₹22.8L</strong></div>
-                  <div className="slide-item"><small>Payroll Sync Health</small><strong>98.7%</strong></div>
+            <div className="login-showcase">
+              <div className="showcase-head">
+                <h3>Corporate Decision Suite</h3>
+                <p>Animated dashboards, payroll linkage, and outcome tracking in one flow.</p>
+              </div>
+              <div className="showcase-slider">
+                <div className="showcase-track">
+                  <div className="showcase-slide">
+                    <div>
+                      <small>Health Insights</small>
+                      <strong>Live wellness signals</strong>
+                      <span>Employee risk, engagement, and care adoption.</span>
+                    </div>
+                    <div className="showcase-illustration pulse-a" />
+                  </div>
+                  <div className="showcase-slide">
+                    <div>
+                      <small>Projected Savings</small>
+                      <strong>INR 22.8L this quarter</strong>
+                      <span>Claims avoided with OPD and tele support.</span>
+                    </div>
+                    <div className="showcase-illustration pulse-b" />
+                  </div>
+                  <div className="showcase-slide">
+                    <div>
+                      <small>Payroll + Credits</small>
+                      <strong>98.7% sync health</strong>
+                      <span>Auto-adjusted credit runway and payouts.</span>
+                    </div>
+                    <div className="showcase-illustration pulse-c" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -235,8 +371,8 @@ function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div>
-          <h2>Employee Health Portal</h2>
-          <p>{companyName} • Decision Intelligence</p>
+          <h2>Astikan Corporate Intelligence</h2>
+          <p>{companyName} - Decision Intelligence</p>
         </div>
 
         <nav>
@@ -259,6 +395,8 @@ function App() {
               setCorporateIdInput('');
               setUsername('');
               setPassword('');
+              setAuthError('');
+              setAuthInfo('');
             }}
           >
             Logout
