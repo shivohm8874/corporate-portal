@@ -1,299 +1,209 @@
-import { useMemo, useState } from 'react';
-import {
-  Activity,
-  CircleX,
-  Link2,
-  Plus,
-  RefreshCw,
-  Search,
-  Upload,
-  Users,
-  UserPlus2,
-} from 'lucide-react';
-import { ProgressBar, SectionTitle, StatCard } from '../components/ui';
-
-type ProviderName = 'greytHR' | 'RazorpayX Payroll' | 'Keka';
+import { Bell } from "lucide-react";
+import { useState } from "react";
 
 export function WorkforcePage() {
-  const [activeAction, setActiveAction] = useState<'add' | 'upload' | 'connect' | 'fetch'>('add');
-  const [employeeQuery, setEmployeeQuery] = useState('');
-  const [employeeStatusFilter, setEmployeeStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [employeeDeptFilter, setEmployeeDeptFilter] = useState<'all' | 'Engineering' | 'Sales' | 'Operations' | 'Finance' | 'HR'>('all');
-  const [employeeName, setEmployeeName] = useState('');
-  const [employeeEmail, setEmployeeEmail] = useState('');
-  const [employeeCode, setEmployeeCode] = useState('');
-  const [uploadFileName, setUploadFileName] = useState('');
-  const [connectedProvider, setConnectedProvider] = useState<ProviderName>('greytHR');
-  const [fetchWindow, setFetchWindow] = useState<'delta' | 'full'>('delta');
-  const [activityLog, setActivityLog] = useState<string[]>([
-    'Fetched 48 new employees from greytHR 6 minutes ago.',
-    'CSV import completed. 126 employees added, 4 failed validation.',
-    'RazorpayX Payroll token refreshed successfully.',
-  ]);
-
-  const hasValidAddEmployee = useMemo(
-    () => employeeName.trim().length > 1 && employeeEmail.includes('@') && employeeCode.trim().length > 1,
-    [employeeCode, employeeEmail, employeeName]
-  );
-
-  const pushActivity = (entry: string) => {
-    setActivityLog((prev) => [entry, ...prev].slice(0, 6));
-  };
-
-  const submitAddEmployee = () => {
-    if (!hasValidAddEmployee) {
-      pushActivity('Add Employee blocked. Fill name, valid email, and employee code.');
-      return;
-    }
-
-    pushActivity(`Employee "${employeeName}" queued for creation and corporate assignment.`);
-    setEmployeeName('');
-    setEmployeeEmail('');
-    setEmployeeCode('');
-  };
-
-  const triggerUpload = () => {
-    if (!uploadFileName.trim()) {
-      pushActivity('Upload blocked. Add a CSV file name to continue.');
-      return;
-    }
-
-    pushActivity(`CSV "${uploadFileName}" accepted for validation and bulk employee import.`);
-    setUploadFileName('');
-  };
-
-  const triggerConnect = () => {
-    pushActivity(`${connectedProvider} integration handshake started. Waiting for OAuth callback.`);
-  };
-
-  const triggerFetch = () => {
-    const mode = fetchWindow === 'delta' ? 'last 24 hours changes' : 'full employee base';
-    pushActivity(`Fetch started from ${connectedProvider} for ${mode}.`);
-  };
-
-  const employees = [
-    { code: 'EMP-1001', name: 'Aditi Sharma', email: 'aditi.sharma@corp.com', department: 'Engineering', status: 'active', joinedAt: '2023-08-11' },
-    { code: 'EMP-1038', name: 'Rohan Mehta', email: 'rohan.mehta@corp.com', department: 'Sales', status: 'active', joinedAt: '2022-12-19' },
-    { code: 'EMP-1087', name: 'Priya Nair', email: 'priya.nair@corp.com', department: 'Operations', status: 'inactive', joinedAt: '2021-05-04' },
-    { code: 'EMP-1124', name: 'Karan Bedi', email: 'karan.bedi@corp.com', department: 'Finance', status: 'active', joinedAt: '2024-01-22' },
-    { code: 'EMP-1172', name: 'Sneha Iyer', email: 'sneha.iyer@corp.com', department: 'HR', status: 'active', joinedAt: '2020-10-14' },
-    { code: 'EMP-1219', name: 'Arjun Khanna', email: 'arjun.khanna@corp.com', department: 'Engineering', status: 'inactive', joinedAt: '2019-03-30' },
-  ] as const;
-
-  const filteredEmployees = employees.filter((employee) => {
-    const q = employeeQuery.trim().toLowerCase();
-    const qMatch =
-      !q ||
-      employee.name.toLowerCase().includes(q) ||
-      employee.email.toLowerCase().includes(q) ||
-      employee.code.toLowerCase().includes(q);
-    const statusMatch = employeeStatusFilter === 'all' || employee.status === employeeStatusFilter;
-    const deptMatch = employeeDeptFilter === 'all' || employee.department === employeeDeptFilter;
-    return qMatch && statusMatch && deptMatch;
-  });
+  const [showImport, setShowImport] = useState(false);
 
   return (
-    <div className="page page-workforce">
-      <SectionTitle title="Employee Overview" subtitle="Understand employee participation by team" />
-      <div className="grid cols-4">
-        <StatCard title="Total Employees" subtitle="Company strength" value="2,685" delta="Updated 2 mins ago" icon={<Users size={16} />} />
-        <StatCard title="Active" subtitle="Using health services" value="2,507" delta="93.4% active" icon={<Activity size={16} />} />
-        <StatCard title="Inactive" subtitle="No activity in 30 days" value="178" delta="Needs intervention" icon={<CircleX size={16} />} />
-        <StatCard title="Active Rate" subtitle="Total utilization" value="93.4%" delta="+1.8% this month" icon={<RefreshCw size={16} />} />
+    <div className="emp-shell">
+      <div className="emp-topbar">
+        <div className="brand-row">
+          <div className="brand-mark">H</div>
+          <strong>HCLTech</strong>
+        </div>
+        <div className="search-pill">
+          <span className="search-icon">S</span>
+          <input type="search" placeholder="Search employees..." />
+        </div>
+        <div className="top-actions">
+          <button className="btn-primary" type="button">+ Add Employee</button>
+          <button className="btn-ghost" type="button" onClick={() => setShowImport(true)}>Import Bulk Upload</button>
+          <button className="icon-btn notif" type="button">
+            <Bell size={16} />
+            <span className="badge">2</span>
+          </button>
+        </div>
       </div>
 
-      <section className="card panel">
-        <h2>Employee Operations Hub</h2>
-        <p className="workforce-subline">
-          Frontend-ready controls for employee onboarding and payroll-driven sync. Connect these actions to backend APIs.
-        </p>
-
-        <div className="workforce-action-tabs">
-          <button className={`ghost-btn ${activeAction === 'add' ? 'tab-active' : ''}`} onClick={() => setActiveAction('add')}>
-            <UserPlus2 size={14} /> Add Employee
-          </button>
-          <button className={`ghost-btn ${activeAction === 'upload' ? 'tab-active' : ''}`} onClick={() => setActiveAction('upload')}>
-            <Upload size={14} /> Upload Employees
-          </button>
-          <button className={`ghost-btn ${activeAction === 'connect' ? 'tab-active' : ''}`} onClick={() => setActiveAction('connect')}>
-            <Link2 size={14} /> Connect Payroll
-          </button>
-          <button className={`ghost-btn ${activeAction === 'fetch' ? 'tab-active' : ''}`} onClick={() => setActiveAction('fetch')}>
-            <Search size={14} /> Fetch Employees
-          </button>
+      <div className="emp-header">
+        <h1>Employees</h1>
+        <div className="emp-sync">
+          <button className="pill" type="button">Select All v</button>
+          <button className="pill" type="button">Synced v</button>
+          <span className="sync-tag">Synced: last 1m</span>
         </div>
+      </div>
 
-        <div className="workforce-ops-grid">
-          <article className="workforce-ops-form soft-card">
-            {activeAction === 'add' && (
-              <>
-                <strong>Manual Employee Add</strong>
-                <label>
-                  Employee Name
-                  <input className="input" placeholder="e.g. Aditi Sharma" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} />
-                </label>
-                <label>
-                  Employee Email
-                  <input className="input" placeholder="aditi@company.com" value={employeeEmail} onChange={(e) => setEmployeeEmail(e.target.value)} />
-                </label>
-                <label>
-                  Employee Code
-                  <input className="input" placeholder="EMP-1038" value={employeeCode} onChange={(e) => setEmployeeCode(e.target.value)} />
-                </label>
-                <button className="primary-btn" onClick={submitAddEmployee}>
-                  <Plus size={14} /> Create Employee
-                </button>
-              </>
-            )}
-
-            {activeAction === 'upload' && (
-              <>
-                <strong>Bulk Upload (CSV)</strong>
-                <label>
-                  CSV File Name
-                  <input className="input" placeholder="employees-march.csv" value={uploadFileName} onChange={(e) => setUploadFileName(e.target.value)} />
-                </label>
-                <small>Required columns: employee_code, name, email, phone, department, payroll_id.</small>
-                <button className="primary-btn" onClick={triggerUpload}>
-                  <Upload size={14} /> Validate & Upload
-                </button>
-              </>
-            )}
-
-            {activeAction === 'connect' && (
-              <>
-                <strong>Payroll Connector</strong>
-                <label>
-                  Provider
-                  <select className="input" value={connectedProvider} onChange={(e) => setConnectedProvider(e.target.value as ProviderName)}>
-                    <option value="greytHR">greytHR</option>
-                    <option value="RazorpayX Payroll">RazorpayX Payroll</option>
-                    <option value="Keka">Keka</option>
-                  </select>
-                </label>
-                <small>OAuth or token exchange should be handled by backend callback routes.</small>
-                <button className="primary-btn" onClick={triggerConnect}>
-                  <Link2 size={14} /> Start Connection
-                </button>
-              </>
-            )}
-
-            {activeAction === 'fetch' && (
-              <>
-                <strong>Fetch Employees from Payroll</strong>
-                <label>
-                  Source Provider
-                  <select className="input" value={connectedProvider} onChange={(e) => setConnectedProvider(e.target.value as ProviderName)}>
-                    <option value="greytHR">greytHR</option>
-                    <option value="RazorpayX Payroll">RazorpayX Payroll</option>
-                    <option value="Keka">Keka</option>
-                  </select>
-                </label>
-                <div className="workforce-fetch-mode">
-                  <button className={`ghost-btn ${fetchWindow === 'delta' ? 'tab-active' : ''}`} onClick={() => setFetchWindow('delta')}>Delta Sync</button>
-                  <button className={`ghost-btn ${fetchWindow === 'full' ? 'tab-active' : ''}`} onClick={() => setFetchWindow('full')}>Full Sync</button>
-                </div>
-                <button className="primary-btn" onClick={triggerFetch}>
-                  <RefreshCw size={14} /> Fetch Now
-                </button>
-              </>
-            )}
-          </article>
-
-          <article className="soft-card workforce-activity">
-            <strong>Recent Employee Ops Activity</strong>
-            <div className="workforce-activity-list">
-              {activityLog.map((entry) => (
-                <div className="workforce-activity-row" key={entry}>
-                  <span className="chip chip-info">Event</span>
-                  <p>{entry}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section className="card panel">
-        <div className="row-bet">
-          <h2>Employee Directory</h2>
-          <span className="chip chip-info">{filteredEmployees.length} visible</span>
-        </div>
-        <div className="employee-list-toolbar">
-          <input
-            className="input"
-            placeholder="Search by employee name, email, or code"
-            value={employeeQuery}
-            onChange={(e) => setEmployeeQuery(e.target.value)}
-          />
-          <select className="input" value={employeeStatusFilter} onChange={(e) => setEmployeeStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}>
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          <select className="input" value={employeeDeptFilter} onChange={(e) => setEmployeeDeptFilter(e.target.value as 'all' | 'Engineering' | 'Sales' | 'Operations' | 'Finance' | 'HR')}>
-            <option value="all">All Departments</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Sales">Sales</option>
-            <option value="Operations">Operations</option>
-            <option value="Finance">Finance</option>
-            <option value="HR">HR</option>
-          </select>
-        </div>
-
-        <div className="employee-grid">
-          <div className="employee-grid-head">
-            <span>Employee</span>
-            <span>Code</span>
-            <span>Department</span>
-            <span>Status</span>
-            <span>Joined</span>
+      <div className="emp-metrics">
+        <div className="metric-card">
+          <strong>Total Employees 248</strong>
+          <div className="dropdown">All Departments v</div>
+          <div className="metric-bars">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
           </div>
-          {filteredEmployees.map((employee) => (
-            <div className="employee-grid-row" key={employee.code}>
-              <div>
-                <strong>{employee.name}</strong>
-                <small>{employee.email}</small>
-              </div>
-              <span>{employee.code}</span>
-              <span>{employee.department}</span>
-              <span className={`chip ${employee.status === 'active' ? 'chip-green' : 'chip-warning'}`}>
-                {employee.status === 'active' ? 'Active' : 'Inactive'}
-              </span>
-              <span>{employee.joinedAt}</span>
+        </div>
+        <div className="metric-card">
+          <strong>Risk Level</strong>
+          <div className="search-mini">
+            <input placeholder="Search employees..." />
+            <span>Q</span>
+          </div>
+        </div>
+        <div className="metric-card">
+          <strong>Health Score</strong>
+          <div className="score-row">
+            <div className="score">78</div>
+            <div className="score-meta">/100
+              <small>Total Stress</small>
             </div>
-          ))}
-          {filteredEmployees.length === 0 && (
-            <div className="employee-grid-empty">No employees found for current filter.</div>
-          )}
+            <div className="mini-donut" />
+          </div>
         </div>
-      </section>
+        <div className="metric-card">
+          <strong>Average Health Score 78</strong>
+          <div className="trend-mini">
+            <span>+4.2%</span>
+            <small>in this month</small>
+          </div>
+          <div className="spark" />
+        </div>
+        <div className="metric-card">
+          <strong>At Risk Employees</strong>
+          <div className="risk-count">8</div>
+          <small>Assess employees</small>
+          <div className="mini-donut warn" />
+        </div>
+      </div>
 
-      <section className="card panel">
-        <h2>Department Heatmap</h2>
-        <div className="grid cols-4">
-          {[
-            ['Engineering', 842, 94.8], ['Sales', 324, 92.9], ['Marketing', 156, 94.9], ['Operations', 512, 91.4],
-            ['Finance', 128, 95.3], ['HR', 64, 96.9], ['Customer Support', 421, 91.2], ['Product', 238, 94.1],
-          ].map((d) => (
-            <article className="dept-card" key={d[0]}>
-              <h4>{d[0]}</h4>
-              <small>{d[1]} employees</small>
-              <div className="row-bet"><span>Engagement</span><strong>{d[2]}%</strong></div>
-              <ProgressBar value={d[2] as number} />
-            </article>
-          ))}
+      <div className="emp-toolbar">
+        <button className="pill" type="button">Select All v</button>
+        <button className="pill" type="button">Bulk Actions v</button>
+        <button className="pill" type="button">Export CSV v</button>
+        <div className="toolbar-search">
+          <input placeholder="Search employees..." />
+          <span>Q</span>
         </div>
-      </section>
+        <div className="toolbar-search">
+          <input placeholder="Search employees..." />
+          <span>Q</span>
+        </div>
+      </div>
 
-      <section className="card panel">
-        <h2>Payroll Sync Status</h2>
-        <div className="grid cols-3">
-          {['greytHR', 'RazorpayX Payroll', 'Zoho People'].map((s) => (
-            <article className="soft-card" key={s}><strong>{s}</strong><span>Connected</span></article>
-          ))}
+      <div className="emp-table">
+        <div className="emp-row head">
+          <span><input type="checkbox" /> Select All</span>
+          <span>Employees</span>
+          <span>Department</span>
+          <span>Health Score</span>
+          <span>Stress</span>
+          <span>Attendance</span>
+          <span>Risk Level</span>
+          <span>Status</span>
+          <span>...</span>
         </div>
-      </section>
+        {[
+          ["Anika Rao", "Operations", "62", "High", "85%", "High", "Active"],
+          ["Rohit Menon", "Sales", "74", "Medium", "92%", "Moderate", "Active"],
+          ["Divya Mehta", "Engineering", "88", "Low", "99%", "High", "Active"],
+          ["Kabir Shah", "HR", "64", "Low", "93%", "Moderate", "Active"],
+          ["Sara Joseph", "Marketing", "79", "Low", "95%", "Low", "Active"],
+          ["Manish Gupta", "Design", "89", "Stable", "91%", "Low", "Active"],
+          ["Pooja Nair", "People Ops", "72", "Stable", "93%", "Low", "Active"],
+          ["Arjun Malik", "Engineering", "86", "Stable", "96%", "Low", "Active"],
+        ].map((row) => (
+          <div className="emp-row" key={row[0]}>
+            <span><input type="checkbox" /></span>
+            <span className="emp-name">
+              <i className="avatar">
+                {row[0]
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((n) => n[0])
+                  .join('')
+                  .toUpperCase()}
+              </i>
+              {row[0]}
+            </span>
+            <span>{row[1]}</span>
+            <span className="score-pill">{row[2]}</span>
+            <span>{row[3]}</span>
+            <span className="attend-bar"><i style={{ width: row[4] }} /></span>
+            <span className="risk-pill">{row[5]}</span>
+            <span>{row[6]}</span>
+            <span>...</span>
+          </div>
+        ))}
+        <div className="emp-footer">
+          <span>1 - 10 of 248</span>
+          <div className="pager">1 2 3 4 5 6 7 8</div>
+        </div>
+      </div>
+
+      <div className="emp-selection">
+        <span>3 Employees selected</span>
+        <button className="pill" type="button">Send Health Alert</button>
+        <button className="pill" type="button">Assign Wellness Program</button>
+        <button className="pill" type="button">More Actions v</button>
+      </div>
+
+      <div className="emp-footer-row">
+        <span>10 rows/page</span>
+        <div className="pager">1 2 3 4 5 6 7 8 9 10</div>
+      </div>
+
+      {showImport && (
+        <div className="import-overlay" role="dialog" aria-modal="true">
+          <div className="import-modal">
+            <div className="import-head">
+              <strong>Import Employees</strong>
+              <button className="icon-btn" type="button" onClick={() => setShowImport(false)}>x</button>
+            </div>
+            <p>Welcome to bulk upload, all employees.</p>
+            <button className="btn-ghost" type="button">Download template</button>
+            <div className="drop-zone">
+              <div className="drop-icon">+</div>
+              <p>Drag & drop CSV (Max: 5 MB)</p>
+              <button className="btn-primary" type="button">Browse File</button>
+            </div>
+            <small>Review and ensure your template is filled out correctly before upload</small>
+            <div className="import-actions">
+              <button className="btn-ghost" type="button">Download CSV Sample</button>
+              <button className="btn-ghost" type="button">Download Sample</button>
+            </div>
+            <div className="import-table">
+              <div className="import-row head">
+                <span>Name</span>
+                <span>Department</span>
+                <span>Employee ID</span>
+                <span>ID</span>
+              </div>
+              <div className="import-row">
+                <span>Anika Rau</span>
+                <span>Operations</span>
+                <span>EMP-1001</span>
+                <span>EMP-1001</span>
+              </div>
+              <div className="import-row">
+                <span>Rohit Menon</span>
+                <span>Sales</span>
+                <span>EMP-1006</span>
+                <span>EMP-1006</span>
+              </div>
+              <div className="import-row">
+                <span>Divya Mehta</span>
+                <span>Engineering</span>
+                <span>EMP-0904</span>
+                <span>EMP-0904</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

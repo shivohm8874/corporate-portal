@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   BadgeIndianRupee,
@@ -7,8 +7,10 @@ import {
   ChartNoAxesColumnIncreasing,
   FileText,
   LayoutDashboard,
+  LogOut,
   Shield,
   Target,
+  UserCircle,
   Users,
   WalletCards,
   Workflow,
@@ -37,18 +39,16 @@ import './styles/pages.css';
 
 const navItems: NavItem[] = [
   { key: 'command', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-  { key: 'credit', label: 'Credits', icon: <WalletCards size={16} /> },
-  { key: 'payments', label: 'Billing', icon: <BadgeIndianRupee size={16} /> },
   { key: 'workforce', label: 'Employees', icon: <Users size={16} /> },
-  { key: 'payroll', label: 'Payroll Sync', icon: <Workflow size={16} /> },
   { key: 'health', label: 'Health Insights', icon: <Activity size={16} /> },
-  { key: 'programs', label: 'Programs', icon: <Target size={16} /> },
-  { key: 'savings', label: 'Savings', icon: <ChartNoAxesColumnIncreasing size={16} /> },
-  { key: 'forecasting', label: 'Forecast', icon: <ChartColumnBig size={16} /> },
-  { key: 'alerts', label: 'Alerts', icon: <Bell size={16} /> },
-  { key: 'policies', label: 'Policies', icon: <Shield size={16} /> },
+  { key: 'programs', label: 'Health Programmes', icon: <Target size={16} /> },
+  { key: 'savings', label: 'Savings & ROI', icon: <ChartNoAxesColumnIncreasing size={16} /> },
+  { key: 'forecasting', label: 'Trajectory Forecast', icon: <ChartColumnBig size={16} /> },
+  { key: 'payroll', label: 'Payroll & Insurance', icon: <Workflow size={16} /> },
+  { key: 'credit', label: 'Credits & Billing', icon: <WalletCards size={16} /> },
+  { key: 'alerts', label: 'Alerts & Policies', icon: <Bell size={16} /> },
   { key: 'reports', label: 'Reports', icon: <FileText size={16} /> },
-  { key: 'settings', label: 'Settings', icon: <Wrench size={16} /> },
+  { key: 'settings', label: 'Profile', icon: <UserCircle size={16} /> },
 ];
 
 function getPageView(page: PageKey) {
@@ -101,6 +101,7 @@ function App() {
   const [companyDisplayId, setCompanyDisplayId] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [desktopAllowed, setDesktopAllowed] = useState(typeof window !== 'undefined' ? window.innerWidth >= DESKTOP_MIN_WIDTH : true);
+  const lastAuthorizedRef = useRef('');
 
   const CORPORATE_ID_KEY = 'corporate_id_session';
 
@@ -124,11 +125,27 @@ function App() {
     if (savedId) setCorporateIdInput(savedId);
   }, []);
 
+  useEffect(() => {
+    if (authStep !== 'corporate' || authLoading) return;
+    const trimmed = corporateIdInput.trim().toUpperCase();
+    if (!trimmed) {
+      setAuthError('');
+      setAuthInfo('');
+      return;
+    }
+    if (trimmed === lastAuthorizedRef.current) return;
+    const timeoutId = window.setTimeout(() => {
+      lastAuthorizedRef.current = trimmed;
+      void authorizeCorporateStep(trimmed);
+    }, 600);
+    return () => window.clearTimeout(timeoutId);
+  }, [authStep, corporateIdInput, authLoading]);
+
   if (!desktopAllowed) {
     return (
       <main className="desktop-only-wrap">
         <section className="desktop-only-card">
-          <h1>Astikan Corporate Intelligence</h1>
+          <h1>Astikan Health Programme</h1>
           <p>Please login through desktop for the best and secure experience.</p>
           <small>This portal is currently optimized for desktop screens only.</small>
         </section>
@@ -136,8 +153,8 @@ function App() {
     );
   }
 
-  const authorizeCorporateStep = async () => {
-    const key = corporateIdInput.trim().toUpperCase();
+  const authorizeCorporateStep = async (id?: string) => {
+    const key = (id ?? corporateIdInput).trim().toUpperCase();
     if (!key) {
       setAuthError('');
       return;
@@ -184,7 +201,12 @@ function App() {
       <main className="login-wrap">
         <section className="login-shell fade-up">
           <article className="login-card">
-            <h1>Astikan Corporate Intelligence</h1>
+            <div className="login-brand">
+              <span className="brand-icon" aria-hidden="true" />
+              <span className="brand-text">Astikan</span>
+            </div>
+            <p className="login-kicker">Welcome back!</p>
+            <h1>Astikan Health Programme</h1>
             <p>Enterprise wellness intelligence platform for payroll-linked analytics and health credit operations.</p>
 
             {authStep === 'corporate' ? (
@@ -199,9 +221,7 @@ function App() {
                     required
                   />
                 </label>
-                <button className="primary-btn" onClick={() => void authorizeCorporateStep()} disabled={authLoading}>
-                  {authLoading ? 'Authorizing...' : 'Authorize Corporate'}
-                </button>
+                {authLoading && <p className="auth-info">Verifying corporate ID...</p>}
               </>
             ) : authStep === 'login' ? (
               <>
@@ -324,39 +344,72 @@ function App() {
           </article>
 
           <article className="login-visual">
-            <div className="orb orb-one" />
-            <div className="orb orb-two" />
-            <div className="orb orb-three" />
-            <div className="login-showcase">
-              <div className="showcase-head">
-                <h3>Corporate Decision Suite</h3>
-                <p>Animated dashboards, payroll linkage, and outcome tracking in one flow.</p>
-              </div>
-              <div className="showcase-slider">
-                <div className="showcase-track">
-                  <div className="showcase-slide">
-                    <div>
-                      <small>Health Insights</small>
-                      <strong>Live wellness signals</strong>
-                      <span>Employee risk, engagement, and care adoption.</span>
-                    </div>
-                    <div className="showcase-illustration pulse-a" />
+            <div className="login-hero">
+              <div className="hero-grid">
+                <div className="hero-tile hero-brand">
+                  <div className="brand-mark" />
+                  <div className="brand-copy">
+                    <span>Welcome back!</span>
+                    <strong>Access your health intelligence portal.</strong>
                   </div>
-                  <div className="showcase-slide">
-                    <div>
-                      <small>Projected Savings</small>
-                      <strong>INR 22.8L this quarter</strong>
-                      <span>Claims avoided with OPD and tele support.</span>
-                    </div>
-                    <div className="showcase-illustration pulse-b" />
+                </div>
+                <div className="hero-tile hero-graph">
+                  <div className="hero-mini-card">
+                    <span>Engagement</span>
+                    <strong>84%</strong>
+                    <div className="hero-sparkline" />
                   </div>
-                  <div className="showcase-slide">
-                    <div>
-                      <small>Payroll + Credits</small>
-                      <strong>98.7% sync health</strong>
-                      <span>Auto-adjusted credit runway and payouts.</span>
+                  <div className="hero-bar" />
+                  <div className="hero-bar short" />
+                  <div className="hero-line" />
+                </div>
+                <div className="hero-tile hero-pattern" />
+                <div className="hero-tile hero-abstract">
+                  <span className="abstract-circle" />
+                  <span className="abstract-wave" />
+                  <span className="abstract-star" />
+                  <div className="hero-stat-chip">
+                    <span>Wellness index</span>
+                    <strong>78</strong>
+                  </div>
+                </div>
+                <div className="hero-tile hero-metrics">
+                  <div>
+                    <small>Engagement</small>
+                    <strong>84%</strong>
+                  </div>
+                  <div>
+                    <small>Savings</small>
+                    <strong>₹22.8L</strong>
+                  </div>
+                  <div className="hero-pill-row">
+                    <span>Payroll sync</span>
+                    <span className="pill">98.7%</span>
+                  </div>
+                  <div className="hero-kpi">
+                    <span>Active employees</span>
+                    <strong>2,198</strong>
+                  </div>
+                  <div className="hero-kpi">
+                    <span>At risk</span>
+                    <strong>288</strong>
+                  </div>
+                  <div className="hero-legend">
+                    <span className="legend-item"><span className="legend-dot" style={{ background: '#5eead4' }} />Green</span>
+                    <span className="legend-item"><span className="legend-dot" style={{ background: '#facc15' }} />Orange</span>
+                    <span className="legend-item"><span className="legend-dot" style={{ background: '#f87171' }} />Red</span>
+                  </div>
+                </div>
+                <div className="hero-tile hero-gradient">
+                  <div className="hero-table">
+                    <div className="hero-table-row">
+                      <span>Risk alerts</span>
+                      <strong>12</strong>
                     </div>
-                    <div className="showcase-illustration pulse-c" />
+                    <div className="hero-table-row">
+                      <span>Programmes</span>
+                      <strong>8 live</strong>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -370,9 +423,20 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div>
-          <h2>Astikan Corporate Intelligence</h2>
-          <p>{companyName} - Decision Intelligence</p>
+        <div className="sidebar-brand">
+          <div className="brand-badge" aria-hidden="true">
+            {companyName
+              .split(' ')
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((word) => word[0])
+              .join('')
+              .toUpperCase() || 'CO'}
+          </div>
+          <div>
+            <h2>{companyName}</h2>
+            <p>{companyDisplayId ? `Corporate ID ${companyDisplayId}` : 'Astikan Health Programme'}</p>
+          </div>
         </div>
 
         <nav>
@@ -383,12 +447,9 @@ function App() {
           ))}
         </nav>
 
-        <div className="quick-stats">
-          <small>Quick Stats</small>
-          <strong>2,847 Active Users</strong>
-          <span>Sync: 2 mins ago</span>
+        <div className="sidebar-footer">
           <button
-            className="ghost-btn"
+            className="icon-btn"
             onClick={() => {
               clearCorporateSession();
               setAuthStep('corporate');
@@ -398,8 +459,10 @@ function App() {
               setAuthError('');
               setAuthInfo('');
             }}
+            aria-label="Logout"
+            title="Logout"
           >
-            Logout
+            <LogOut size={18} />
           </button>
         </div>
       </aside>
