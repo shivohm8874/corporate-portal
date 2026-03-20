@@ -1,20 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
-  BadgeIndianRupee,
   Bell,
   ChartColumnBig,
   ChartNoAxesColumnIncreasing,
   FileText,
   LayoutDashboard,
   LogOut,
-  Shield,
   Target,
   UserCircle,
   Users,
   WalletCards,
   Workflow,
-  Wrench,
 } from 'lucide-react';
 import type { NavItem, PageKey } from './types/app';
 import { authorizeCorporate, clearCorporateSession, getCorporateSession, loginCorporate, saveCorporateSession } from './services/authApi';

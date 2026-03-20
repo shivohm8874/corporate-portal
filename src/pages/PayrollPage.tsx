@@ -17,6 +17,8 @@ import {
 import Papa from "papaparse"
 import * as XLSX from "xlsx"
 
+type UploadRow = Record<string, string>
+
 const emptyState: IntegrationState = {
   companyId: "",
   payroll: { connected: [], available: [], inbuiltEnabled: false, uploads: [] },
@@ -157,9 +159,9 @@ export function PayrollPage() {
       let employees: Array<{ employeeId: string; fullName?: string; department?: string; email?: string }> = []
       if (ext === "csv") {
         const text = await file.text()
-        const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true })
+        const parsed = Papa.parse<UploadRow>(text, { header: true, skipEmptyLines: true })
         employees = (parsed.data || [])
-          .map((row, index) => ({
+          .map((row: UploadRow, index: number) => ({
             employeeId: row.employee_id || row.employeeId || row.id || `EMP-${index + 1}`,
             fullName: row.name || row.fullName || row.employee_name || "Employee",
             department: row.department || row.team || "General",
@@ -171,8 +173,8 @@ export function PayrollPage() {
         const workbook = XLSX.read(buffer, { type: "array" })
         const sheetName = workbook.SheetNames[0]
         const sheet = workbook.Sheets[sheetName]
-        const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet)
-        employees = json.map((row, index) => ({
+        const json = XLSX.utils.sheet_to_json<UploadRow>(sheet)
+        employees = json.map((row: UploadRow, index: number) => ({
           employeeId: row.employee_id || row.employeeId || row.id || `EMP-${index + 1}`,
           fullName: row.name || row.fullName || row.employee_name || "Employee",
           department: row.department || row.team || "General",
