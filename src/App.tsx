@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Activity,
   Bell,
   ChartColumnBig,
   ChartNoAxesColumnIncreasing,
+  Eye,
+  EyeOff,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -29,6 +31,8 @@ import {
   SavingsPage,
   SettingsPage,
   WorkforcePage,
+  CorporateRegisterPage,
+  CorporateTrackStatusPage,
 } from './pages';
 import './styles/app-shell.css';
 import './styles/auth.css';
@@ -47,6 +51,21 @@ const navItems: NavItem[] = [
   { key: 'reports', label: 'Reports', icon: <FileText size={16} /> },
   { key: 'settings', label: 'Profile', icon: <UserCircle size={16} /> },
 ];
+
+type HeroTile = {
+  id: string;
+  className: string;
+  content: ReactNode;
+};
+
+function shuffleTiles(items: HeroTile[]) {
+  const next = [...items];
+  for (let i = next.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [next[i], next[j]] = [next[j], next[i]];
+  }
+  return next;
+}
 
 function getPageView(page: PageKey) {
   switch (page) {
@@ -82,12 +101,14 @@ function getPageView(page: PageKey) {
 }
 
 function App() {
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
   const DESKTOP_MIN_WIDTH = 1024;
   const [current, setCurrent] = useState<PageKey>('command');
   const [authStep, setAuthStep] = useState<'corporate' | 'login' | 'forgot' | 'reset' | 'ready'>('corporate');
   const [corporateIdInput, setCorporateIdInput] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authInfo, setAuthInfo] = useState('');
   const [resetEmail, setResetEmail] = useState('');
@@ -100,6 +121,127 @@ function App() {
   const [desktopAllowed, setDesktopAllowed] = useState(typeof window !== 'undefined' ? window.innerWidth >= DESKTOP_MIN_WIDTH : true);
   const lastAuthorizedRef = useRef('');
 
+  const baseHeroTiles: HeroTile[] = [
+    {
+      id: 'brand',
+      className: 'hero-tile hero-brand',
+      content: (
+        <>
+          <div className="brand-mark" />
+          <div className="brand-copy">
+            <span>Welcome back!</span>
+            <strong>Access your health intelligence portal.</strong>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'graph',
+      className: 'hero-tile hero-graph',
+      content: (
+        <>
+          <div className="hero-mini-card">
+            <span>Engagement</span>
+            <strong>84%</strong>
+            <div className="hero-sparkline" />
+          </div>
+          <div className="hero-bar" />
+          <div className="hero-bar short" />
+          <div className="hero-line" />
+          <span className="hero-callout">{companyDisplayId ? `Corporate ID ${companyDisplayId}` : 'Enter your 6 digit corporate ID'}</span>
+        </>
+      ),
+    },
+    {
+      id: 'pattern',
+      className: 'hero-tile hero-pattern',
+      content: (
+        <div className="hero-pattern-stack">
+          <div className="pattern-kpi">
+            <span>Claims processed</span>
+            <strong>1,284</strong>
+          </div>
+          <div className="pattern-kpi">
+            <span>Upcoming audits</span>
+            <strong>3</strong>
+          </div>
+          <div className="pattern-pill">Coverage review in 12 days</div>
+        </div>
+      ),
+    },
+    {
+      id: 'abstract',
+      className: 'hero-tile hero-abstract',
+      content: (
+        <>
+          <span className="abstract-circle" />
+          <span className="abstract-wave" />
+          <span className="abstract-star" />
+          <div className="hero-stat-chip">
+            <span>Wellness index</span>
+            <strong>78</strong>
+          </div>
+          <div className="abstract-caption">Mood stability</div>
+        </>
+      ),
+    },
+    {
+      id: 'metrics',
+      className: 'hero-tile hero-metrics',
+      content: (
+        <>
+          <div>
+            <small>Engagement</small>
+            <strong>84%</strong>
+          </div>
+          <div>
+            <small>Savings</small>
+            <strong>₹22.8L</strong>
+          </div>
+          <div className="hero-pill-row">
+            <span>Payroll sync</span>
+            <span className="pill">98.7%</span>
+          </div>
+          <div className="hero-kpi">
+            <span>Active employees</span>
+            <strong>2,198</strong>
+          </div>
+          <div className="hero-kpi">
+            <span>At risk</span>
+            <strong>288</strong>
+          </div>
+          <div className="hero-legend">
+            <span className="legend-item"><span className="legend-dot" style={{ background: '#5eead4' }} />Green</span>
+            <span className="legend-item"><span className="legend-dot" style={{ background: '#facc15' }} />Orange</span>
+            <span className="legend-item"><span className="legend-dot" style={{ background: '#f87171' }} />Red</span>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'gradient',
+      className: 'hero-tile hero-gradient',
+      content: (
+        <div className="hero-table">
+          <div className="hero-table-row">
+            <span>Risk alerts</span>
+            <strong>12</strong>
+          </div>
+          <div className="hero-table-row">
+            <span>Programmes</span>
+            <strong>8 live</strong>
+          </div>
+          <div className="hero-table-row">
+            <span>Claims open</span>
+            <strong>47</strong>
+          </div>
+        </div>
+      ),
+    },
+  ];
+
+  const [heroTiles, setHeroTiles] = useState<HeroTile[]>(baseHeroTiles);
+
   const CORPORATE_ID_KEY = 'corporate_id_session';
 
   useEffect(() => {
@@ -107,6 +249,18 @@ function App() {
     onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    setHeroTiles(baseHeroTiles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyDisplayId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setHeroTiles((prev) => shuffleTiles(prev));
+    }, 5200);
+    return () => window.clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -137,18 +291,6 @@ function App() {
     }, 600);
     return () => window.clearTimeout(timeoutId);
   }, [authStep, corporateIdInput, authLoading]);
-
-  if (!desktopAllowed) {
-    return (
-      <main className="desktop-only-wrap">
-        <section className="desktop-only-card">
-          <h1>Astikan Health Programme</h1>
-          <p>Please login through desktop for the best and secure experience.</p>
-          <small>This portal is currently optimized for desktop screens only.</small>
-        </section>
-      </main>
-    );
-  }
 
   const authorizeCorporateStep = async (id?: string) => {
     const key = (id ?? corporateIdInput).trim().toUpperCase();
@@ -193,18 +335,38 @@ function App() {
     }
   };
 
+  if (pathname.startsWith('/register')) {
+    return <CorporateRegisterPage />;
+  }
+
+  if (pathname.startsWith('/track-status') || pathname.startsWith('/tract-status')) {
+    return <CorporateTrackStatusPage />;
+  }
+
+  if (!desktopAllowed) {
+    return (
+      <main className="desktop-only-wrap">
+        <section className="desktop-only-card">
+          <h1>Astikan Health Programme</h1>
+          <p>Please login through desktop for the best and secure experience.</p>
+          <small>This portal is currently optimized for desktop screens only.</small>
+        </section>
+      </main>
+    );
+  }
+
   if (authStep !== 'ready') {
     return (
       <main className="login-wrap">
         <section className="login-shell fade-up">
           <article className="login-card">
             <div className="login-brand">
-              <span className="brand-icon" aria-hidden="true" />
+              <img className="brand-icon" src="/favicon.png" alt="Astikan" />
               <span className="brand-text">Astikan</span>
             </div>
             <p className="login-kicker">Welcome back!</p>
             <h1>Astikan Health Programme</h1>
-            <p>Enterprise wellness intelligence platform for payroll-linked analytics and health credit operations.</p>
+            <p>Enterprise wellness intelligence platform for payroll-linked analytics.</p>
 
             {authStep === 'corporate' ? (
               <>
@@ -212,7 +374,7 @@ function App() {
                   Corporate ID <span className="required">*</span>
                   <input
                     className="input"
-                    placeholder="Enter Corporate ID (e.g. HCL001)"
+                    placeholder="Enter Your 6 Digit Corporate ID"
                     value={corporateIdInput}
                     onChange={(e) => setCorporateIdInput(e.target.value)}
                     required
@@ -232,7 +394,23 @@ function App() {
                 </label>
                 <label>
                   Password
-                  <input className="input" type="password" placeholder="Enter password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <div className="auth-input-wrap">
+                    <input
+                      className="input"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="auth-eye-btn"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </label>
                 <button
                   className="link-btn"
@@ -266,7 +444,7 @@ function App() {
                   Corporate ID <span className="required">*</span>
                   <input
                     className="input"
-                    placeholder="Enter Corporate ID"
+                    placeholder="Enter Your 6 Digit Corporate ID"
                     value={resetCorporateId}
                     onChange={(e) => setResetCorporateId(e.target.value)}
                     required
@@ -343,72 +521,11 @@ function App() {
           <article className="login-visual">
             <div className="login-hero">
               <div className="hero-grid">
-                <div className="hero-tile hero-brand">
-                  <div className="brand-mark" />
-                  <div className="brand-copy">
-                    <span>Welcome back!</span>
-                    <strong>Access your health intelligence portal.</strong>
+                {heroTiles.map((tile) => (
+                  <div key={tile.id} className={tile.className}>
+                    {tile.content}
                   </div>
-                </div>
-                <div className="hero-tile hero-graph">
-                  <div className="hero-mini-card">
-                    <span>Engagement</span>
-                    <strong>84%</strong>
-                    <div className="hero-sparkline" />
-                  </div>
-                  <div className="hero-bar" />
-                  <div className="hero-bar short" />
-                  <div className="hero-line" />
-                </div>
-                <div className="hero-tile hero-pattern" />
-                <div className="hero-tile hero-abstract">
-                  <span className="abstract-circle" />
-                  <span className="abstract-wave" />
-                  <span className="abstract-star" />
-                  <div className="hero-stat-chip">
-                    <span>Wellness index</span>
-                    <strong>78</strong>
-                  </div>
-                </div>
-                <div className="hero-tile hero-metrics">
-                  <div>
-                    <small>Engagement</small>
-                    <strong>84%</strong>
-                  </div>
-                  <div>
-                    <small>Savings</small>
-                    <strong>₹22.8L</strong>
-                  </div>
-                  <div className="hero-pill-row">
-                    <span>Payroll sync</span>
-                    <span className="pill">98.7%</span>
-                  </div>
-                  <div className="hero-kpi">
-                    <span>Active employees</span>
-                    <strong>2,198</strong>
-                  </div>
-                  <div className="hero-kpi">
-                    <span>At risk</span>
-                    <strong>288</strong>
-                  </div>
-                  <div className="hero-legend">
-                    <span className="legend-item"><span className="legend-dot" style={{ background: '#5eead4' }} />Green</span>
-                    <span className="legend-item"><span className="legend-dot" style={{ background: '#facc15' }} />Orange</span>
-                    <span className="legend-item"><span className="legend-dot" style={{ background: '#f87171' }} />Red</span>
-                  </div>
-                </div>
-                <div className="hero-tile hero-gradient">
-                  <div className="hero-table">
-                    <div className="hero-table-row">
-                      <span>Risk alerts</span>
-                      <strong>12</strong>
-                    </div>
-                    <div className="hero-table-row">
-                      <span>Programmes</span>
-                      <strong>8 live</strong>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </article>

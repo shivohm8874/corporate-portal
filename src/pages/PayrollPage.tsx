@@ -213,180 +213,205 @@ export function PayrollPage() {
 
   return (
     <div className="page page-payroll">
+      {loading ? (
+        <div className="corp-loader-fullscreen">
+          <div className="corp-spinner" />
+          <span>Loading integrations...</span>
+        </div>
+      ) : null}
       <SectionTitle
         title="Payroll & Insurance Integrations"
-        subtitle="Connect payroll and group insurance systems to sync employee mapping, billing and ROI"
+        subtitle="Connect payroll and group insurance systems to sync employee mapping, billing and ROI."
         action={<button className="primary-btn">+ Add Integration</button>}
       />
-      <div className="grid cols-4">
-        <StatCard title="Connected Systems" subtitle="Current integrations" value={String(summary.connectedSystems)} delta="Active channels" icon={<Workflow size={16} />} />
-        <StatCard title="Total Synced Employees" subtitle="Across payroll + insurance" value={mappedEmployees} delta="Auto-refresh" icon={<UsersRound size={16} />} />
-        <StatCard title="Failed Syncs (24h)" subtitle="Needs attention" value={String(summary.failedSyncs)} delta="API/auth failures" icon={<AlertTriangle size={16} />} />
-        <StatCard title="Last Sync" subtitle="Most recent update" value={summary.lastSync ? new Date(summary.lastSync).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : "—"} delta="Realtime mode" icon={<Clock3 size={16} />} />
+
+      <div className="payroll-hero">
+        <div>
+          <h3>Integration Health</h3>
+          <p>{loading ? "Loading integrations..." : activity}</p>
+          {error && <p className="payroll-error">{error}</p>}
+        </div>
+        <div className="payroll-hero-grid">
+          <StatCard title="Connected Systems" subtitle="Payroll + Insurance" value={String(summary.connectedSystems)} delta="Active channels" icon={<Workflow size={16} />} />
+          <StatCard title="Synced Employees" subtitle="Auto-refresh" value={mappedEmployees} delta="Realtime sync" icon={<UsersRound size={16} />} />
+          <StatCard title="Failed Syncs (24h)" subtitle="Needs attention" value={String(summary.failedSyncs)} delta="API/auth failures" icon={<AlertTriangle size={16} />} />
+          <StatCard title="Last Sync" subtitle="Most recent update" value={summary.lastSync ? new Date(summary.lastSync).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : "—"} delta="Realtime mode" icon={<Clock3 size={16} />} />
+        </div>
       </div>
 
-      <p className="workforce-subline">{loading ? "Loading integrations..." : activity}</p>
-      {error && <p className="workforce-subline" style={{ color: "#b4232f" }}>{error}</p>}
-
-      <section className="card panel">
-        <h2>Connected Payroll Systems</h2>
-        {state.payroll.connected.length === 0 && !state.payroll.inbuiltEnabled && (
-          <article className="soft-card">
-            <strong>No payroll connected yet</strong>
-            <p className="muted">Choose an integration or start with Astikan Payroll (free).</p>
-            <div className="row-gap">
+      <section className="payroll-panels">
+        <article className="payroll-card inbuilt">
+          <div className="payroll-card-head">
+            <div>
+              <h4>Astikan HR & Payroll</h4>
+              <p>Always available • Use this free inbuilt system or bulk upload employees.</p>
+            </div>
+            <span className={`chip ${state.payroll.inbuiltEnabled ? "chip-green" : ""}`}>{state.payroll.inbuiltEnabled ? "Active" : "Available"}</span>
+          </div>
+          <div className="payroll-card-actions">
+            {!state.payroll.inbuiltEnabled ? (
               <button className="ghost-btn" onClick={handleEnableInbuilt}>Enable Astikan Payroll</button>
-              <button className="ghost-btn" onClick={() => uploadRef.current?.click()}><UploadCloud size={14} /> Bulk upload</button>
+            ) : (
+              <button className="ghost-btn" onClick={() => handleDisconnect("payroll", "inbuilt")}><CircleX size={14} /> Disable</button>
+            )}
+            <button className="ghost-btn" onClick={() => uploadRef.current?.click()}><UploadCloud size={14} /> Upload CSV/XLSX</button>
+          </div>
+        </article>
+
+        <article className="payroll-card">
+          <h4>Connected Payroll Systems</h4>
+          {state.payroll.connected.length === 0 && (
+            <div className="empty-state">
+              <strong>No payroll integrations connected</strong>
+              <p>Connect a provider below to sync employee mapping and finance data.</p>
             </div>
-          </article>
-        )}
-        {state.payroll.inbuiltEnabled && (
-          <article className="integration">
-            <div>
-              <h4>Astikan Payroll <span className="chip chip-green">Active</span></h4>
-              <small>Inbuilt payroll • Configurable rules</small>
+          )}
+          {state.payroll.connected.map((s) => (
+            <div className={`provider-row ${s.status === "Error" ? "provider-error" : ""}`} key={s.name}>
+              <div>
+                <h5>{s.name}</h5>
+                <span>{s.employees.toLocaleString("en-IN")} employees • {s.cadence}</span>
+              </div>
+              <div className="provider-actions">
+                <span className={`chip ${s.status === "Error" ? "chip-warning" : "chip-green"}`}>{s.status}</span>
+                <button className="ghost-btn" onClick={() => handleSync("payroll", s.name)}><RefreshCw size={14} /> Sync</button>
+                <button className="link-btn" onClick={() => handleDisconnect("payroll", s.name)}><CircleX size={14} /> Disconnect</button>
+              </div>
             </div>
-            <div className="row-gap">
-              <button className="ghost-btn" onClick={() => uploadRef.current?.click()}><UploadCloud size={14} /> Upload</button>
-              <button className="link-btn" onClick={() => handleDisconnect("payroll", "inbuilt")}><CircleX size={14} /> Disable</button>
-            </div>
-          </article>
-        )}
-        {state.payroll.connected.map((s) => (
-          <article className={`integration ${s.status === "Error" ? "integration-error" : ""}`} key={s.name}>
-            <div>
-              <h4>{s.name} <span className={`chip ${s.status === "Error" ? "chip-warning" : "chip-green"}`}>{s.status}</span></h4>
-              <small>{s.employees.toLocaleString("en-IN")} employees • {s.cadence}</small>
-            </div>
-            <div className="row-gap">
-              <button className="ghost-btn" onClick={() => handleSync("payroll", s.name)}><RefreshCw size={14} /> Sync now</button>
-              <button className="link-btn" onClick={() => handleDisconnect("payroll", s.name)}><CircleX size={14} /> Disconnect</button>
-            </div>
-          </article>
-        ))}
+          ))}
+        </article>
       </section>
 
-      <section className="card panel">
-        <h2>Available Payroll Integrations</h2>
-        <div className="grid cols-3">
-          {state.payroll.available.map((i) => (
-            <article className="soft-card" key={i}>
-              <strong>{i}</strong>
-              <p className="muted">API requirements: client id, secret, org id, callback URL.</p>
-              <button className="ghost-btn" onClick={() => handleConnect("payroll", i)}>Connect</button>
-            </article>
-          ))}
-        </div>
-        <input
-          ref={uploadRef}
-          type="file"
-          accept=".csv,.xls,.xlsx"
-          style={{ display: "none" }}
-          onChange={(event) => handleUpload(event.target.files?.[0])}
-        />
-        {previewRows.length > 0 && (
-          <div className="soft-card" style={{ marginTop: 16 }}>
-            <strong>Upload Preview ({previewFilename})</strong>
-            <div className="integration-table" style={{ marginTop: 12 }}>
-              {previewRows.map((row) => (
-                <article className="integration" key={row.employeeId}>
-                  <div>
-                    <h4>{row.fullName ?? "Employee"}</h4>
-                    <small>{row.employeeId} • {row.department ?? "General"}</small>
-                  </div>
-                  <div className="row-gap">
-                    <small>{row.email ?? "—"}</small>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        )}
-        {state.payroll.uploads && state.payroll.uploads.length > 0 && (
-          <div className="soft-card" style={{ marginTop: 16 }}>
-            <strong>Recent Uploads</strong>
-            {state.payroll.uploads.map((u) => (
-              <div key={u.filename} className="row-gap" style={{ justifyContent: "space-between", marginTop: 8 }}>
-                <span>{u.filename}</span>
-                <small>{new Date(u.uploadedAt).toLocaleString("en-IN", { hour: "numeric", minute: "2-digit" })}</small>
-              </div>
+      <section className="payroll-panels">
+        <article className="payroll-card">
+          <h4>Available Payroll Providers</h4>
+          <div className="provider-grid">
+            {state.payroll.available.map((provider) => (
+              <button key={provider} className="provider-card" type="button" onClick={() => handleConnect("payroll", provider)}>
+                <div>
+                  <strong>{provider}</strong>
+                  <p>Connect via OAuth and auto-sync employee roster.</p>
+                </div>
+                <span className="ghost-btn">Connect</span>
+              </button>
             ))}
           </div>
-        )}
-      </section>
-
-      <section className="card panel">
-        <h2>Employee Sync Status</h2>
-        <p className="muted">Live status updates every 10 seconds based on payroll sync runs.</p>
-        <div className="grid cols-4" style={{ marginTop: 12 }}>
-          <div className="soft-card"><strong>{employeeStats.total}</strong><small>Total employees</small></div>
-          <div className="soft-card"><strong>{employeeStats.synced}</strong><small>Synced</small></div>
-          <div className="soft-card"><strong>{employeeStats.pending}</strong><small>Pending</small></div>
-          <div className="soft-card"><strong>{employeeStats.failed}</strong><small>Failed</small></div>
-        </div>
-        {employeeStats.failed > 0 && (
-          <div className="row-gap" style={{ marginTop: 12 }}>
-            <button className="ghost-btn" onClick={exportFailedCsv}>Export failed CSV</button>
-          </div>
-        )}
-        <div className="integration-table" style={{ marginTop: 16 }}>
-          {employeeRows.length === 0 && <p className="muted">No employee sync data yet. Upload a payroll file to start.</p>}
-          {employeeRows.map((row) => (
-            <article className={`integration ${row.status === "Failed" ? "integration-error" : ""}`} key={row.employeeId}>
+        </article>
+        <article className="payroll-card">
+          <h4>Connected Insurance Partners</h4>
+          {state.insurance.connected.length === 0 && (
+            <div className="empty-state">
+              <strong>No insurance partner connected</strong>
+              <p>Connect group insurance to unlock claims + wellness coverage tracking.</p>
+            </div>
+          )}
+          {state.insurance.connected.map((s) => (
+            <div className={`provider-row ${s.status === "Error" ? "provider-error" : ""}`} key={s.name}>
               <div>
-                <h4>{row.fullName ?? "Employee"} <span className={`chip ${row.status === "Failed" ? "chip-warning" : "chip-green"}`}>{row.status}</span></h4>
-                <small>{row.employeeId} • {row.department ?? "General"}</small>
+                <h5>{s.name}</h5>
+                <span>{s.employees.toLocaleString("en-IN")} lives • {s.cadence}</span>
               </div>
-              <div className="row-gap">
-                <small>{row.lastSyncAt ? new Date(row.lastSyncAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : "—"}</small>
-                {row.status === "Failed" && (
-                  <button className="ghost-btn" onClick={() => retryPayrollEmployee(companyId, row.employeeId)}>
-                    Retry
-                  </button>
-                )}
+              <div className="provider-actions">
+                <span className={`chip ${s.status === "Error" ? "chip-warning" : "chip-green"}`}>{s.status}</span>
+                <button className="ghost-btn" onClick={() => handleSync("insurance", s.name)}><RefreshCw size={14} /> Sync</button>
+                <button className="link-btn" onClick={() => handleDisconnect("insurance", s.name)}><CircleX size={14} /> Disconnect</button>
               </div>
-            </article>
+            </div>
           ))}
+        </article>
+      </section>
+
+      <section className="payroll-panels">
+        <article className="payroll-card upload-panel">
+          <div>
+            <h4>Bulk Upload</h4>
+            <p>Upload payroll exports to sync employee IDs, departments, and finance mapping.</p>
+          </div>
+          <div className="upload-actions">
+            <button className="ghost-btn" onClick={() => uploadRef.current?.click()}><UploadCloud size={14} /> Upload file</button>
+            <button className="ghost-btn" onClick={exportFailedCsv}>Export failed list</button>
+          </div>
+          <input
+            ref={uploadRef}
+            type="file"
+            accept=".csv,.xls,.xlsx"
+            style={{ display: "none" }}
+            onChange={(event) => handleUpload(event.target.files?.[0] ?? null)}
+          />
+          {previewRows.length > 0 && (
+            <div className="upload-preview">
+              <h5>Preview: {previewFilename}</h5>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewRows.map((row) => (
+                    <tr key={row.employeeId}>
+                      <td>{row.employeeId}</td>
+                      <td>{row.fullName}</td>
+                      <td>{row.department}</td>
+                      <td>{row.email}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+      </section>
+
+      <section className="payroll-card sync-table">
+        <div className="sync-head">
+          <div>
+            <h4>Live Sync Status</h4>
+            <p>{employeeStats.total.toLocaleString("en-IN")} employees • {employeeStats.synced} synced • {employeeStats.pending} pending • {employeeStats.failed} failed</p>
+          </div>
+          <button className="ghost-btn" onClick={exportFailedCsv}>Export failed CSV</button>
         </div>
-      </section>
-
-      <section className="card panel">
-        <h2>Connected Group Insurance</h2>
-        {state.insurance.connected.length === 0 && (
-          <article className="soft-card">
-            <strong>No insurance connected yet</strong>
-            <p className="muted">Connect your group insurance provider to sync eligibility and claims.</p>
-          </article>
-        )}
-        {state.insurance.connected.map((s) => (
-          <article className={`integration ${s.status === "Error" ? "integration-error" : ""}`} key={s.name}>
-            <div>
-              <h4>{s.name} <span className={`chip ${s.status === "Error" ? "chip-warning" : "chip-green"}`}>{s.status}</span></h4>
-              <small>{s.employees.toLocaleString("en-IN")} covered employees • {s.cadence}</small>
-            </div>
-            <div className="row-gap">
-              <button className="ghost-btn" onClick={() => handleSync("insurance", s.name)}><RefreshCw size={14} /> Sync now</button>
-              <button className="link-btn" onClick={() => handleDisconnect("insurance", s.name)}><CircleX size={14} /> Disconnect</button>
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <section className="card panel">
-        <h2>Available Group Insurance Integrations</h2>
-        <p className="muted">Connect third-party insurers to sync group coverage and claims metadata.</p>
-        <div className="grid cols-3">
-          {state.insurance.available.map((name) => {
-            const isConnected = state.insurance.connected.some((item) => item.name === name)
-            return (
-              <article className="soft-card" key={name}>
-                <strong>{name}</strong>
-                <button className="ghost-btn" onClick={() => handleConnect("insurance", name)} disabled={isConnected}>
-                  {isConnected ? "Connected" : "Connect"}
-                </button>
-              </article>
-            )
-          })}
+        <div className="table-shell">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Last Sync</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {employeeRows.map((row) => (
+                <tr key={row.employeeId}>
+                  <td>{row.employeeId}</td>
+                  <td>{row.fullName ?? "—"}</td>
+                  <td>{row.department ?? "—"}</td>
+                  <td>{row.email ?? "—"}</td>
+                  <td><span className={`chip ${row.status === "Failed" ? "chip-warning" : row.status === "Pending" ? "chip" : "chip-green"}`}>{row.status}</span></td>
+                  <td>{row.lastSyncAt ? new Date(row.lastSyncAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" }) : "—"}</td>
+                  <td>
+                    {row.status === "Failed" ? (
+                      <button className="link-btn" onClick={() => retryPayrollEmployee(companyId, row.employeeId)}>Retry</button>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {employeeRows.length === 0 && (
+                <tr>
+                  <td colSpan={7}>No sync activity yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>

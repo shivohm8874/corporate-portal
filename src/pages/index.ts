@@ -11,3 +11,5 @@ export { AlertsPage } from './AlertsPage';
 export { PoliciesPage } from './PoliciesPage';
 export { ReportsPage } from './ReportsPage';
 export { SettingsPage } from './SettingsPage';
+export { CorporateRegisterPage } from "./CorporateRegisterPage";
+export { CorporateTrackStatusPage } from "./CorporateTrackStatusPage";

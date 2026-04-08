@@ -1,4 +1,11 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, '') ?? '/api'
+const RAW_BASE = import.meta.env.VITE_API_BASE_URL
+const PROD_BASE = 'https://astikan-backend-production.up.railway.app/api'
+const DEV_BASE = '/api'
+const DEFAULT_BASE = import.meta.env.DEV ? DEV_BASE : PROD_BASE
+const API_BASE_URL =
+  typeof RAW_BASE === 'string' && RAW_BASE.trim() && RAW_BASE !== 'undefined' && RAW_BASE !== 'null'
+    ? RAW_BASE.replace(/\/+$/, '')
+    : DEFAULT_BASE
 
 type ApiEnvelope<T> = {
   status: 'ok' | 'error'
@@ -36,4 +43,8 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
 
 export function apiPost<T, B>(path: string, body: B) {
   return request<T>(path, { method: 'POST', body: JSON.stringify(body) })
+}
+
+export function apiGet<T>(path: string) {
+  return request<T>(path, { method: 'GET' })
 }
